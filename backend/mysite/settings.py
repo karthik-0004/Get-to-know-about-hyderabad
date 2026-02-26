@@ -155,3 +155,9 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
+
+# ---------------------------------------------------------------------------
+# ML Model directory (project root / ml_model)
+# BASE_DIR = backend/, so BASE_DIR.parent = project root
+# ---------------------------------------------------------------------------
+ML_MODEL_DIR = BASE_DIR.parent / "ml_model"

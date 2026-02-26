@@ -18,9 +18,10 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from .api_views import analyze_area
+from .api_views import analyze_area, predict_house_price
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/analyze-area/", analyze_area, name="analyze_area"),
+    path("api/predict-price/", predict_house_price, name="predict_house_price"),
 ]

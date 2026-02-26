@@ -11,10 +11,12 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 export default function SearchBar({ searchValue, onSearchValueChange, onSelectLocation }) {
   const [predictions, setPredictions] = useState([])
   const [showDropdown, setShowDropdown] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(-1) // keyboard highlight index
   const serviceRef = useRef(null)
   const placesServiceRef = useRef(null)
   const sessionTokenRef = useRef(null)
   const wrapperRef = useRef(null)
+  const inputRef = useRef(null)
 
   /* ── Lazy-init services ── */
   const getAutocompleteService = useCallback(() => {
@@ -45,6 +47,11 @@ export default function SearchBar({ searchValue, onSearchValueChange, onSelectLo
       sessionTokenRef.current = new window.google.maps.places.AutocompleteSessionToken()
     }
   }, [])
+
+  /* ── Reset active index when predictions change ── */
+  useEffect(() => {
+    setActiveIndex(-1)
+  }, [predictions])
 
   /* ── Fetch predictions when user types ── */
   useEffect(() => {
@@ -117,30 +124,78 @@ export default function SearchBar({ searchValue, onSearchValueChange, onSelectLo
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  /* ── Clear input ── */
+  const handleClear = useCallback(() => {
+    onSearchValueChange('')
+    setPredictions([])
+    setShowDropdown(false)
+    setActiveIndex(-1)
+    if (inputRef.current) inputRef.current.focus()
+  }, [onSearchValueChange])
+
+  /* ── Keyboard navigation ── */
+  const handleKeyDown = useCallback(
+    (e) => {
+      if (!showDropdown || predictions.length === 0) return
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        setActiveIndex((prev) => (prev < predictions.length - 1 ? prev + 1 : 0))
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        setActiveIndex((prev) => (prev > 0 ? prev - 1 : predictions.length - 1))
+      } else if (e.key === 'Enter') {
+        e.preventDefault()
+        if (activeIndex >= 0 && activeIndex < predictions.length) {
+          handleSelect(predictions[activeIndex])
+        }
+      } else if (e.key === 'Escape') {
+        setShowDropdown(false)
+        setActiveIndex(-1)
+      }
+    },
+    [showDropdown, predictions, activeIndex, handleSelect],
+  )
+
   return (
     <div className="floating-search" ref={wrapperRef}>
-      <input
-        type="text"
-        className="search-input"
-        placeholder="Search a place in Hyderabad"
-        value={searchValue}
-        onChange={(e) => {
-          onSearchValueChange(e.target.value)
-          setShowDropdown(true)
-        }}
-        onFocus={() => {
-          if (predictions.length > 0) setShowDropdown(true)
-        }}
-      />
+      <div className="search-input-wrapper">
+        <input
+          ref={inputRef}
+          type="text"
+          className="search-input"
+          placeholder="Search a place in Hyderabad"
+          value={searchValue}
+          onChange={(e) => {
+            onSearchValueChange(e.target.value)
+            setShowDropdown(true)
+          }}
+          onFocus={() => {
+            if (predictions.length > 0) setShowDropdown(true)
+          }}
+          onKeyDown={handleKeyDown}
+        />
+        {searchValue && (
+          <button
+            type="button"
+            className="search-clear-btn"
+            onClick={handleClear}
+            aria-label="Clear search"
+          >
+            ×
+          </button>
+        )}
+      </div>
 
       {showDropdown && predictions.length > 0 && (
-        <ul className="suggestions-list">
-          {predictions.map((p) => (
-            <li key={p.place_id}>
+        <ul className="suggestions-list" role="listbox">
+          {predictions.map((p, i) => (
+            <li key={p.place_id} role="option" aria-selected={i === activeIndex}>
               <button
                 type="button"
-                className="suggestion-item"
+                className={`suggestion-item${i === activeIndex ? ' suggestion-item--active' : ''}`}
                 onClick={() => handleSelect(p)}
+                onMouseEnter={() => setActiveIndex(i)}
               >
                 {p.description}
               </button>
