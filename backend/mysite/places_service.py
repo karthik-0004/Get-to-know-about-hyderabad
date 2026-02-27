@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import math
 import os
+import re
 from typing import Any
 
 import requests
@@ -24,7 +25,8 @@ PHOTO_URL_TEMPLATE = (
     "https://maps.googleapis.com/maps/api/place/photo"
     "?maxheight=400&photo_reference={ref}&key={key}"
 )
-SEARCH_RADIUS_METERS = 3000
+SEARCH_RADIUS_DEFAULT = 3000
+SEARCH_RADIUS_METERS = SEARCH_RADIUS_DEFAULT  # backward-compat alias
 MAX_RESULTS_PER_CATEGORY = 5
 
 # Earth's mean radius in metres (WGS-84)
@@ -96,18 +98,21 @@ def _search_nearby(
     lat: float,
     lng: float,
     place_type: str,
-    radius_meters: int = SEARCH_RADIUS_METERS,
+    radius_meters: int = SEARCH_RADIUS_DEFAULT,
+    keyword: str | None = None,
 ) -> list[dict[str, Any]]:
     """Call the legacy Nearby Search endpoint (GET with query params)."""
 
     api_key = _get_api_key()
 
-    params = {
+    params: dict[str, Any] = {
         "location": f"{lat},{lng}",
         "radius": radius_meters,
         "type": place_type,
         "key": api_key,
     }
+    if keyword:
+        params["keyword"] = keyword
 
     try:
         response = requests.get(
@@ -214,29 +219,136 @@ def _sorted_by_distance(places: list[dict[str, Any]]) -> list[dict[str, Any]]:
     )
 
 
-# ── Public entry point ─────────────────────────────────────────────────
+# ── Quality-filter helpers ─────────────────────────────────────────────
 
-# (response key, Google place type)
-_MULTI_CATEGORIES: list[tuple[str, str]] = [
-    ("hospitals",       "hospital"),
-    ("malls",           "shopping_mall"),
-    ("cinemas",         "movie_theater"),
-    ("schools",         "school"),
-    ("hotels",          "lodging"),
-    ("restaurants",     "restaurant"),
-    ("bus_stops",       "bus_station"),
-    ("metro_stations",  "subway_station"),
+def _name_matches_any(name: str, patterns: list[str]) -> bool:
+    """Return True if *name* contains any of the blacklist words (case-insensitive)."""
+    lowered = name.lower()
+    return any(re.search(rf"\b{re.escape(p)}\b", lowered) for p in patterns)
+
+
+def _filter_places(
+    results: list[dict[str, Any]],
+    *,
+    min_rating: float = 0.0,
+    exclude_words: list[str] | None = None,
+) -> list[dict[str, Any]]:
+    """Drop results below *min_rating* or whose name matches *exclude_words*."""
+    filtered: list[dict[str, Any]] = []
+    for place in results:
+        rating = place.get("rating") or 0.0
+        if rating < min_rating:
+            continue
+        if exclude_words and _name_matches_any(place.get("name", ""), exclude_words):
+            continue
+        filtered.append(place)
+    return filtered
+
+
+# ── Per-category configuration ─────────────────────────────────────────
+
+_CATEGORY_CONFIG: list[dict[str, Any]] = [
+    {
+        "key": "hospitals",
+        "place_type": "hospital",
+        "keyword": "hospital",
+        "radius": 5000,
+        "min_rating": 3.5,
+        "exclude": [
+            "pharmacy", "medical store", "chemist", "diagnostic",
+            "lab", "pathology", "medicals", "drug",
+        ],
+    },
+    {
+        "key": "malls",
+        "place_type": "shopping_mall",
+        "keyword": "shopping mall",
+        "radius": 5000,
+        "min_rating": 3.5,
+        "exclude": [
+            "store", "shop", "mart", "supermarket", "general",
+            "kirana", "fancy", "medical", "wholesale", "retail",
+            "stationery", "provision",
+        ],
+    },
+    {
+        "key": "cinemas",
+        "place_type": "movie_theater",
+        "keyword": "cinema",
+        "radius": 5000,
+        "min_rating": 3.0,
+        "exclude": [],
+    },
+    {
+        "key": "schools",
+        "place_type": "school",
+        "keyword": "school",
+        "radius": 3000,
+        "min_rating": 3.0,
+        "exclude": ["tuition", "coaching", "tutorial"],
+    },
+    {
+        "key": "hotels",
+        "place_type": "lodging",
+        "keyword": "hotel",
+        "radius": 3000,
+        "min_rating": 3.8,
+        "exclude": [
+            "lodge", "paying guest", "pg", "hostel", "dormitory",
+            "dharamshala", "guest house",
+        ],
+    },
+    {
+        "key": "restaurants",
+        "place_type": "restaurant",
+        "keyword": "restaurant",
+        "radius": 2000,
+        "min_rating": 4.0,
+        "exclude": [
+            "stall", "pani puri", "chaat", "thela", "cart",
+            "tiffin", "mess", "dhaba", "juice",
+        ],
+    },
+    {
+        "key": "bus_stops",
+        "place_type": "bus_station",
+        "keyword": None,
+        "radius": 2000,
+        "min_rating": 0.0,
+        "exclude": [],
+    },
+    {
+        "key": "metro_stations",
+        "place_type": "subway_station",
+        "keyword": "metro station",
+        "radius": 5000,
+        "min_rating": 0.0,
+        "exclude": [],
+    },
 ]
 
+
+# ── Public entry point ─────────────────────────────────────────────────
 
 def analyze_area(lat: float, lng: float) -> dict[str, Any]:
     result: dict[str, Any] = {}
 
-    # ── Top-5-by-rating categories ──────────────────────────────
-    for key, place_type in _MULTI_CATEGORIES:
-        raw = _search_nearby(lat=lat, lng=lng, place_type=place_type)
-        formatted = [_format_place(p) for p in raw]
-        result[key] = _sorted_by_rating(formatted)[:MAX_RESULTS_PER_CATEGORY]
+    # ── Top-5-by-rating categories (with quality filters) ───────
+    for cfg in _CATEGORY_CONFIG:
+        raw = _search_nearby(
+            lat=lat,
+            lng=lng,
+            place_type=cfg["place_type"],
+            radius_meters=cfg.get("radius", SEARCH_RADIUS_DEFAULT),
+            keyword=cfg.get("keyword"),
+        )
+        cleaned = _filter_places(
+            raw,
+            min_rating=cfg.get("min_rating", 0.0),
+            exclude_words=cfg.get("exclude"),
+        )
+        formatted = [_format_place(p) for p in cleaned]
+        result[cfg["key"]] = _sorted_by_rating(formatted)[:MAX_RESULTS_PER_CATEGORY]
 
     # ── Nearest railway station (single object, sorted by distance) ──
     raw_trains = _search_nearby(lat=lat, lng=lng, place_type="train_station")

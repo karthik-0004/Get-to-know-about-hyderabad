@@ -168,7 +168,7 @@ export default function PricePredictionModal({ onClose, onLocalitySelect, onView
 
                     <div className="ppm-result-actions">
                         <button className="ppm-btn ppm-btn--outline" onClick={handleRefine}>Refine Estimate</button>
-                        <button className="ppm-btn ppm-btn--primary" onClick={() => { onClose(); onViewInsights(); }}>
+                        <button className="ppm-btn ppm-btn--primary" onClick={() => { onClose(); onViewInsights(selectedLocality); }}>
                             View Area Insights
                         </button>
                     </div>

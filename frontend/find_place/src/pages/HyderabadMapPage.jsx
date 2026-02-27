@@ -310,12 +310,15 @@ export default function HyderabadMapPage() {
   }, [])
 
   /* ── Analyze flow ── */
-  const handleAnalyze = async () => {
-    if (!selectedLocation) return
+  const handleAnalyze = async (overrideLocation = null) => {
+    const locationToUse = overrideLocation
+      ? { lat: overrideLocation.lat, lng: overrideLocation.lng, address: overrideLocation.name || overrideLocation.address }
+      : selectedLocation
+    if (!locationToUse) return
     setIsAnalyzing(true)
     setAnalysisError('')
     try {
-      const response = await analyzeArea(selectedLocation)
+      const response = await analyzeArea(locationToUse)
       setAnalysisResult(response)
     } catch (error) {
       setAnalysisResult(null)
@@ -452,7 +455,7 @@ export default function HyderabadMapPage() {
         <PricePredictionModal
           onClose={handleClosePredictionModal}
           onLocalitySelect={handlePredictionLocalitySelect}
-          onViewInsights={handleAnalyze}
+          onViewInsights={(location) => { handleClosePredictionModal(); handleAnalyze(location); }}
         />
       )}
     </main>
