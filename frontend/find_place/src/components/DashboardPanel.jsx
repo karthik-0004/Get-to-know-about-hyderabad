@@ -1,5 +1,18 @@
 const PLACEHOLDER_IMAGE = 'https://placehold.co/400x250/f1f5f9/94a3b8?text=No+Photo'
 
+/* ─── Locality score card config ─── */
+const SCORE_CARDS = [
+  { key: 'amenity_score',       icon: '🏪', label: 'Amenity Score',       max: 5,  unit: '' },
+  { key: 'connectivity_score',  icon: '🔗', label: 'Connectivity Score',  max: 10, unit: '' },
+  { key: 'metro_distance_km',   icon: '🚇', label: 'Metro Distance',     max: 15, unit: 'km', invert: true },
+  { key: 'it_hub_distance_km',  icon: '💻', label: 'IT Hub Distance',    max: 20, unit: 'km', invert: true },
+  { key: 'hospital_count',      icon: '🏥', label: 'Hospitals',          max: 80, unit: '' },
+  { key: 'school_count',        icon: '🏫', label: 'Schools',            max: 30, unit: '' },
+  { key: 'mall_count',          icon: '🛍️', label: 'Malls',              max: 50, unit: '' },
+  { key: 'park_count',          icon: '🌳', label: 'Parks',              max: 60, unit: '' },
+  { key: 'road_density',        icon: '🛣️', label: 'Road Density',       max: 4000, unit: '' },
+]
+
 /* ─── Category config for display order, icon & label ─── */
 const SECTIONS = [
   { key: 'hospitals',       icon: '🏥', title: 'Hospitals' },
@@ -93,6 +106,48 @@ function NearestStation({ station }) {
   )
 }
 
+/* ─── LocalityScores ─── */
+function LocalityScores({ scores }) {
+  if (!scores) return null
+
+  return (
+    <section className="locality-scores">
+      <h3 className="place-section-title">📊 Locality Scores — {scores.locality}</h3>
+      <div className="locality-scores-grid">
+        {SCORE_CARDS.map(({ key, icon, label, max, unit, invert }) => {
+          const raw = scores[key]
+          if (raw == null) return null
+          // For distance metrics, lower is better → invert the fill
+          const pct = invert
+            ? Math.max(0, Math.min(100, ((max - raw) / max) * 100))
+            : Math.max(0, Math.min(100, (raw / max) * 100))
+          const barColor = invert
+            ? (raw <= max * 0.25 ? '#22c55e' : raw <= max * 0.5 ? '#eab308' : '#ef4444')
+            : (pct >= 60 ? '#22c55e' : pct >= 30 ? '#eab308' : '#ef4444')
+
+          return (
+            <div key={key} className="score-card">
+              <div className="score-card-header">
+                <span className="score-card-icon">{icon}</span>
+                <span className="score-card-label">{label}</span>
+              </div>
+              <div className="score-card-value">
+                {typeof raw === 'number' ? raw.toFixed(2) : raw}{unit ? ` ${unit}` : ''}
+              </div>
+              <div className="score-bar-track">
+                <div
+                  className="score-bar-fill"
+                  style={{ width: `${pct}%`, background: barColor }}
+                />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
 /* ─── DashboardPanel ─── */
 export default function DashboardPanel({ result, onClose }) {
   const { area, radius_meters: radiusMeters } = result
@@ -115,6 +170,8 @@ export default function DashboardPanel({ result, onClose }) {
       </div>
 
       <div className="dashboard-panel-body">
+        <LocalityScores scores={result.locality_scores} />
+
         {SECTIONS.map(({ key, icon, title }) => (
           <PlaceSection
             key={key}

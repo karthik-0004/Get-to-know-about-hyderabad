@@ -13,6 +13,7 @@ from .places_service import (
     PlacesTimeoutError,
     analyze_area as fetch_nearby_places,
 )
+from .locality_service import get_locality_scores
 
 
 def _to_float(value, field_name: str) -> float:
@@ -83,6 +84,7 @@ def analyze_area(request):
             "area": address.strip(),
             "coordinates": {"lat": lat, "lng": lng},
             "radius_meters": SEARCH_RADIUS_METERS,
+            "locality_scores": get_locality_scores(address.strip()),
             **places,   # hospitals, malls, cinemas, schools, etc.
         },
         status=200,
