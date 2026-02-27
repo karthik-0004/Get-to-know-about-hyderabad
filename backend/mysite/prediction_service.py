@@ -6,6 +6,7 @@ time and exposes a predict_price() function for the API layer.
 import pickle
 import logging
 
+import pandas as pd
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
@@ -23,6 +24,31 @@ with open(_model_dir / "encoders.pkl", "rb") as f:
 
 with open(_model_dir / "feature_columns.pkl", "rb") as f:
     _feature_columns = pickle.load(f)  # list of column names
+
+# ---------------------------------------------------------------------------
+# Locality feature lookup (for models trained with locality-level features)
+# ---------------------------------------------------------------------------
+_LOCALITY_FEATURE_COLS = [
+    "amenity_score", "connectivity_score", "crime_score",
+    "growth_score", "metro_distance_km", "it_hub_distance_km",
+]
+_locality_lookup: dict[str, dict] = {}
+_locality_medians: dict[str, float] = {}
+
+try:
+    _master_df = pd.read_csv(_model_dir / "master_locality_data.csv")
+    _master_df["_key"] = _master_df["locality"].str.lower().str.strip()
+    for _, row in _master_df.iterrows():
+        _locality_lookup[row["_key"]] = {
+            c: float(row[c]) for c in _LOCALITY_FEATURE_COLS if c in row.index
+        }
+    _locality_medians = {
+        c: float(_master_df[c].median())
+        for c in _LOCALITY_FEATURE_COLS if c in _master_df.columns
+    }
+    logger.info("Loaded locality features for %d localities", len(_locality_lookup))
+except Exception as e:
+    logger.warning("Could not load master locality data: %s", e)
 
 logger.info("ML model and encoders loaded from %s", _model_dir)
 
@@ -44,6 +70,12 @@ def _safe_encode(encoder_key: str, value: str) -> int:
     return 0
 
 
+def _get_locality_features(locality: str) -> dict:
+    """Return locality-level feature dict; fall back to medians for unknown."""
+    key = locality.lower().strip()
+    return _locality_lookup.get(key, _locality_medians)
+
+
 def predict_price(
     locality: str,
     area_sqft: float,
@@ -53,7 +85,6 @@ def predict_price(
     furnishing: str,
 ) -> dict:
     """Return a prediction dict with price in Lakhs and Crore."""
-    import pandas as pd
 
     sample = {
         "Locality_enc": _safe_encode("Locality", locality),
@@ -63,6 +94,12 @@ def predict_price(
         "Property Type_enc": _safe_encode("Property Type", property_type),
         "Furnishing_enc": _safe_encode("Furnishing", furnishing),
     }
+
+    # Add locality-level features (only those the model actually needs)
+    loc_feats = _get_locality_features(locality)
+    for col in _LOCALITY_FEATURE_COLS:
+        if col in _feature_columns:
+            sample[col] = loc_feats.get(col, _locality_medians.get(col, 0.0))
 
     df = pd.DataFrame([sample])[_feature_columns]
     predicted_lakhs = round(float(_model.predict(df)[0]), 2)
