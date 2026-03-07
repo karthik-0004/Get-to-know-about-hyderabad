@@ -16,12 +16,16 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
 
-from .api_views import analyze_area, predict_house_price
+from .api_views import analyze_area
+from .auth_views import register_user, login_user, google_login
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/analyze-area/", analyze_area, name="analyze_area"),
-    path("api/predict-price/", predict_house_price, name="predict_house_price"),
+    path("api/register/", register_user, name="register_user"),
+    path("api/login/", login_user, name="login_user"),
+    path("api/google-login/", google_login, name="google_login"),
+    path("api/predict/", include("prediction.urls")),
 ]

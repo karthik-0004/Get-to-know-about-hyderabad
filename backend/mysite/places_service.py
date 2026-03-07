@@ -253,7 +253,7 @@ _CATEGORY_CONFIG: list[dict[str, Any]] = [
         "place_type": "hospital",
         "keyword": "hospital",
         "radius": 5000,
-        "min_rating": 3.5,
+        "min_rating": 3.0,
         "exclude": [
             "pharmacy", "medical store", "chemist", "diagnostic",
             "lab", "pathology", "medicals", "drug",
@@ -264,7 +264,7 @@ _CATEGORY_CONFIG: list[dict[str, Any]] = [
         "place_type": "shopping_mall",
         "keyword": "shopping mall",
         "radius": 5000,
-        "min_rating": 3.5,
+        "min_rating": 3.0,
         "exclude": [
             "store", "shop", "mart", "supermarket", "general",
             "kirana", "fancy", "medical", "wholesale", "retail",
@@ -283,7 +283,7 @@ _CATEGORY_CONFIG: list[dict[str, Any]] = [
         "key": "schools",
         "place_type": "school",
         "keyword": "school",
-        "radius": 3000,
+        "radius": 5000,
         "min_rating": 3.0,
         "exclude": ["tuition", "coaching", "tutorial"],
     },
@@ -291,8 +291,8 @@ _CATEGORY_CONFIG: list[dict[str, Any]] = [
         "key": "hotels",
         "place_type": "lodging",
         "keyword": "hotel",
-        "radius": 3000,
-        "min_rating": 3.8,
+        "radius": 5000,
+        "min_rating": 0.0,
         "exclude": [
             "lodge", "paying guest", "pg", "hostel", "dormitory",
             "dharamshala", "guest house",
@@ -302,8 +302,8 @@ _CATEGORY_CONFIG: list[dict[str, Any]] = [
         "key": "restaurants",
         "place_type": "restaurant",
         "keyword": "restaurant",
-        "radius": 2000,
-        "min_rating": 4.0,
+        "radius": 5000,
+        "min_rating": 0.0,
         "exclude": [
             "stall", "pani puri", "chaat", "thela", "cart",
             "tiffin", "mess", "dhaba", "juice",
@@ -313,7 +313,7 @@ _CATEGORY_CONFIG: list[dict[str, Any]] = [
         "key": "bus_stops",
         "place_type": "bus_station",
         "keyword": None,
-        "radius": 2000,
+        "radius": 5000,
         "min_rating": 0.0,
         "exclude": [],
     },
@@ -347,8 +347,8 @@ def analyze_area(lat: float, lng: float) -> dict[str, Any]:
             min_rating=cfg.get("min_rating", 0.0),
             exclude_words=cfg.get("exclude"),
         )
-        formatted = [_format_place(p) for p in cleaned]
-        result[cfg["key"]] = _sorted_by_rating(formatted)[:MAX_RESULTS_PER_CATEGORY]
+        formatted = [_format_place(p, origin_lat=lat, origin_lng=lng) for p in cleaned]
+        result[cfg["key"]] = _sorted_by_rating(formatted)
 
     # ── Nearest railway station (single object, sorted by distance) ──
     raw_trains = _search_nearby(lat=lat, lng=lng, place_type="train_station")

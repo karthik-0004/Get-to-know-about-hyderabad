@@ -84,79 +84,8 @@ def analyze_area(request):
             "area": address.strip(),
             "coordinates": {"lat": lat, "lng": lng},
             "radius_meters": SEARCH_RADIUS_METERS,
-            "locality_scores": get_locality_scores(address.strip()),
+            "locality_scores": get_locality_scores(address.strip(), lat=lat, lng=lng),
             **places,   # hospitals, malls, cinemas, schools, etc.
         },
         status=200,
     )
-
-
-# ───────────────────────────────────────────────────────────────
-# House Price Prediction
-# ───────────────────────────────────────────────────────────────
-from .prediction_service import predict_price  # noqa: E402
-
-
-@csrf_exempt
-@require_http_methods(["POST", "OPTIONS"])
-def predict_house_price(request):
-    """Predict house price given property details."""
-    if request.method == "OPTIONS":
-        return JsonResponse({}, status=200)
-
-    # --- Parse JSON body ---
-    try:
-        payload = json.loads(request.body.decode("utf-8"))
-    except (json.JSONDecodeError, UnicodeDecodeError):
-        return JsonResponse({"error": "Invalid JSON body"}, status=400)
-
-    if not isinstance(payload, dict):
-        return JsonResponse({"error": "JSON body must be an object"}, status=400)
-
-    # --- Validate required fields ---
-    required_fields = {
-        "locality": str,
-        "area_sqft": (int, float),
-        "bhk": (int, float),
-        "bathrooms": (int, float),
-        "property_type": str,
-        "furnishing": str,
-    }
-
-    errors = []
-    for field, expected_type in required_fields.items():
-        val = payload.get(field)
-        if val is None:
-            errors.append(f"'{field}' is required")
-        elif not isinstance(val, expected_type):
-            errors.append(f"'{field}' must be of type {expected_type}")
-
-    if errors:
-        return JsonResponse({"error": "Validation failed", "details": errors}, status=400)
-
-    # --- Additional numeric validations ---
-    for num_field in ("area_sqft", "bhk", "bathrooms"):
-        if payload[num_field] <= 0:
-            errors.append(f"'{num_field}' must be a positive number")
-
-    if errors:
-        return JsonResponse({"error": "Validation failed", "details": errors}, status=400)
-
-    # --- Call prediction service ---
-    try:
-        result = predict_price(
-            locality=str(payload["locality"]),
-            area_sqft=float(payload["area_sqft"]),
-            bhk=int(payload["bhk"]),
-            bathrooms=int(payload["bathrooms"]),
-            property_type=str(payload["property_type"]),
-            furnishing=str(payload["furnishing"]),
-        )
-    except Exception as exc:
-        print(f"[predict_house_price] Prediction error: {exc}")
-        return JsonResponse(
-            {"error": "Prediction failed", "detail": str(exc)},
-            status=500,
-        )
-
-    return JsonResponse(result, status=200)

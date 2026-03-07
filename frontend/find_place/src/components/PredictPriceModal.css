@@ -1,0 +1,419 @@
+/* ═══════════════════════════════════════════════════════════
+   PredictPriceModal — luxury real-estate aesthetic
+   ═══════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
+
+/* ── overlay ── */
+.pp-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: pp-fade-in 0.25s ease;
+}
+
+@keyframes pp-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── modal panel ── */
+.pp-modal {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  max-height: 88vh;
+  overflow-y: auto;
+  background: #0f0f14;
+  border-radius: 24px 24px 0 0;
+  padding: 2rem 2rem 2.4rem;
+  color: #e8e6e1;
+  animation: pp-slide-up 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes pp-slide-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+/* ── close button ── */
+.pp-close {
+  position: absolute;
+  top: 1rem;
+  right: 1.2rem;
+  background: none;
+  border: none;
+  color: #787878;
+  font-size: 1.3rem;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.pp-close:hover { color: #f59e0b; }
+
+/* ── headings ── */
+.pp-heading {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #f59e0b;
+  margin: 0 0 0.25rem;
+}
+.pp-subheading {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.85rem;
+  color: #9a9a9a;
+  margin: 0 0 1rem;
+}
+
+/* ── tab toggle ── */
+.pp-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.3rem;
+  background: #18181f;
+  border-radius: 12px;
+  padding: 4px;
+  border: 1.5px solid #2a2a33;
+}
+
+.pp-tab {
+  flex: 1;
+  padding: 0.55rem 0.8rem;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: #787878;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.25s, color 0.25s;
+}
+.pp-tab:hover {
+  color: #b0aba1;
+}
+.pp-tab--active {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+}
+
+/* ── tab content ── */
+.pp-tab-content {
+  animation: pp-tab-fade 0.3s ease;
+}
+@keyframes pp-tab-fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── pill row (BHK, furnishing, rental property type) ── */
+.pp-pill-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.pp-pill {
+  flex: 1;
+  min-width: 0;
+  padding: 0.6rem 0.7rem;
+  border-radius: 10px;
+  border: 2px solid #2a2a33;
+  background: #18181f;
+  color: #b0aba1;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+.pp-pill:hover {
+  border-color: #44443f;
+  background: #1f1f28;
+}
+.pp-pill--active {
+  border-color: #f59e0b !important;
+  color: #f59e0b;
+  background: #1c1a12;
+}
+.pp-pill--wide {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+/* ── form fields ── */
+.pp-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.pp-field--anim {
+  opacity: 0;
+  animation: pp-field-in 0.4s ease forwards;
+}
+@keyframes pp-field-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.pp-label {
+  display: block;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #b0aba1;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.45rem;
+}
+
+.pp-input {
+  width: 100%;
+  padding: 0.72rem 0.9rem;
+  border-radius: 10px;
+  border: 1.5px solid #2a2a33;
+  background: #18181f;
+  color: #e8e6e1;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.92rem;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+.pp-input:focus {
+  border-color: #f59e0b;
+}
+.pp-input::placeholder {
+  color: #555;
+}
+
+/* ── property type grid ── */
+.pp-type-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem;
+}
+
+.pp-type-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.85rem 0.5rem;
+  border-radius: 14px;
+  border: 2px solid #2a2a33;
+  background: #18181f;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, transform 0.15s;
+}
+.pp-type-card:hover {
+  border-color: #44443f;
+  background: #1f1f28;
+  transform: translateY(-1px);
+}
+.pp-type-card--active {
+  border-color: #f59e0b !important;
+  background: #1c1a12;
+}
+
+.pp-type-icon {
+  font-size: 1.5rem;
+  margin-bottom: 0.3rem;
+}
+.pp-type-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #d4d0c8;
+}
+
+/* ── BHK stepper ── */
+.pp-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1.5px solid #2a2a33;
+  background: #18181f;
+}
+.pp-stepper-btn {
+  width: 42px;
+  height: 40px;
+  border: none;
+  background: #1f1f28;
+  color: #f59e0b;
+  font-size: 1.15rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.pp-stepper-btn:hover { background: #2a2a33; }
+.pp-stepper-val {
+  width: 46px;
+  text-align: center;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #e8e6e1;
+}
+
+/* ── submit ── */
+.pp-submit {
+  margin-top: 0.5rem;
+  width: 100%;
+  padding: 0.85rem;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: opacity 0.2s, transform 0.15s;
+}
+.pp-submit:hover:not(:disabled) {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+.pp-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* shimmer on hover */
+.pp-submit::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%);
+  transform: translateX(-100%);
+  transition: transform 0.6s;
+}
+.pp-submit:hover::after {
+  transform: translateX(100%);
+}
+
+/* spinner */
+.pp-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2.5px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: pp-spin 0.65s linear infinite;
+}
+@keyframes pp-spin { to { transform: rotate(360deg); } }
+
+/* ── error ── */
+.pp-error {
+  color: #f87171;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem;
+  margin: 0;
+}
+
+/* ── result card ── */
+.pp-result {
+  margin-top: 1.5rem;
+  padding: 1.4rem;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #1a180f, #1c1a12);
+  border: 1.5px solid #f59e0b33;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  animation: pp-field-in 0.35s ease forwards;
+}
+
+.pp-result-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #b0aba1;
+}
+
+.pp-result-price {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #f59e0b;
+}
+
+.pp-result-sqft-range {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem;
+  color: #b0aba1;
+  background: #1a1a22;
+  border: 1px solid #2a2a33;
+  padding: 0.35rem 0.85rem;
+  border-radius: 10px;
+}
+.pp-result-sqft-range strong {
+  color: #e8e6e1;
+}
+
+.pp-result-model {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.75rem;
+  color: #787878;
+  background: #222;
+  padding: 0.2rem 0.65rem;
+  border-radius: 100px;
+}
+
+.pp-result-note {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.72rem;
+  color: #d97706;
+  text-align: center;
+}
+
+.pp-try-again {
+  margin-top: 0.6rem;
+  padding: 0.55rem 1.6rem;
+  border: 1.5px solid #f59e0b;
+  border-radius: 999px;
+  background: transparent;
+  color: #f59e0b;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.pp-try-again:hover {
+  background: #f59e0b;
+  color: #0f0f14;
+}
+
+/* ── scrollbar ── */
+.pp-modal::-webkit-scrollbar { width: 6px; }
+.pp-modal::-webkit-scrollbar-track { background: transparent; }
+.pp-modal::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+/* ── responsive ── */
+@media (min-width: 600px) {
+  .pp-overlay {
+    align-items: center;
+  }
+  .pp-modal {
+    border-radius: 24px;
+    max-height: 85vh;
+  }
+}

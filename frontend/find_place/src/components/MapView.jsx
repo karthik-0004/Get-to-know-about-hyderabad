@@ -33,28 +33,6 @@ const INTRO_STYLE_BASE = {
   zIndex: 2,
 }
 
-/** Red prediction locality boundary */
-const PREDICTION_STYLE = {
-  strokeColor: '#dc2626',
-  strokeOpacity: 0.95,
-  strokeWeight: 2.5,
-  fillColor: '#dc2626',
-  fillOpacity: 0.15,
-  clickable: false,
-  zIndex: 3,
-}
-
-/** Red marker SVG icon */
-const RED_MARKER_ICON = {
-  path: 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z',
-  fillColor: '#dc2626',
-  fillOpacity: 1,
-  strokeColor: '#991b1b',
-  strokeWeight: 1,
-  scale: 1.8,
-  anchor: { x: 12, y: 22 },
-}
-
 /**
  * MapView — renders the Google Map with multiple boundary layers
  *
@@ -62,13 +40,10 @@ const RED_MARKER_ICON = {
  *   center, zoom, markerPosition, areaBoundary, onMapClick, onMapLoad
  *   introBoundary         — Hyderabad city polygon during intro
  *   introBoundaryVisible  — whether intro polygon is faded in
- *   predictionBoundary    — red boundary for prediction locality
- *   predictionMarker      — { lat, lng, label }
  */
 export default function MapView({
   center, zoom = 13, markerPosition, areaBoundary,
   introBoundary, introBoundaryVisible, introActive,
-  predictionBoundary, predictionMarker,
   onMapClick, onMapLoad,
 }) {
   const mapRef = useRef(null)
@@ -145,28 +120,7 @@ export default function MapView({
       {/* ── Area search fallback rectangle ── */}
       {rectBounds && <Rectangle bounds={rectBounds} options={AREA_STYLE} />}
 
-      {/* ── Prediction: red locality boundary ── */}
-      {predictionBoundary?.paths?.map((path, i) => (
-        <Polygon key={`pred-${i}`} paths={path} options={PREDICTION_STYLE} />
-      ))}
-
-      {/* ── Prediction: red marker with label ── */}
-      {predictionMarker && (
-        <Marker
-          position={{ lat: predictionMarker.lat, lng: predictionMarker.lng }}
-          icon={RED_MARKER_ICON}
-          label={predictionMarker.label ? {
-            text: predictionMarker.label,
-            color: '#991b1b',
-            fontSize: '11px',
-            fontWeight: '600',
-            className: 'pred-marker-label',
-          } : undefined}
-          animation={window.google?.maps?.Animation?.DROP}
-        />
-      )}
-
-      {/* ── Default location marker ── */}
+      {/* ── Default location marker ── */}}
       {markerPosition && (
         <Marker
           position={{ lat: markerPosition.lat, lng: markerPosition.lng }}

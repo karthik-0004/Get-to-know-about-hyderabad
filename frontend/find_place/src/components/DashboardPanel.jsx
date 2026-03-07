@@ -1,16 +1,18 @@
+import { useState } from 'react'
+
 const PLACEHOLDER_IMAGE = 'https://placehold.co/400x250/f1f5f9/94a3b8?text=No+Photo'
 
 /* ─── Locality score card config ─── */
 const SCORE_CARDS = [
-  { key: 'amenity_score',       icon: '🏪', label: 'Amenity Score',       max: 5,  unit: '' },
-  { key: 'connectivity_score',  icon: '🔗', label: 'Connectivity Score',  max: 10, unit: '' },
-  { key: 'metro_distance_km',   icon: '🚇', label: 'Metro Distance',     max: 15, unit: 'km', invert: true },
-  { key: 'it_hub_distance_km',  icon: '💻', label: 'IT Hub Distance',    max: 20, unit: 'km', invert: true },
-  { key: 'hospital_count',      icon: '🏥', label: 'Hospitals',          max: 80, unit: '' },
-  { key: 'school_count',        icon: '🏫', label: 'Schools',            max: 30, unit: '' },
-  { key: 'mall_count',          icon: '🛍️', label: 'Malls',              max: 50, unit: '' },
-  { key: 'park_count',          icon: '🌳', label: 'Parks',              max: 60, unit: '' },
-  { key: 'road_density',        icon: '🛣️', label: 'Road Density',       max: 4000, unit: '' },
+  { key: 'amenity_score',       icon: '🏪', label: 'Amenity Score',       max: 10,    unit: '',   suffix: '/ 10' },
+  { key: 'connectivity_score',  icon: '🔗', label: 'Connectivity Score',  max: 10,    unit: '',   suffix: '/ 10' },
+  { key: 'metro_distance_km',   icon: '🚇', label: 'Metro Distance',     max: 50,    unit: 'km', invert: true, suffix: 'km' },
+  { key: 'it_hub_distance_km',  icon: '💻', label: 'IT Hub Distance',    max: 60,    unit: 'km', invert: true, suffix: 'km' },
+  { key: 'hospital_count',      icon: '🏥', label: 'Hospitals',          max: 50,    unit: '',   suffix: 'nearby' },
+  { key: 'school_count',        icon: '🏫', label: 'Schools',            max: 60,    unit: '',   suffix: 'nearby' },
+  { key: 'mall_count',          icon: '🛍️', label: 'Malls',              max: 15,    unit: '',   suffix: 'nearby' },
+  { key: 'park_count',          icon: '🌳', label: 'Parks',              max: 30,    unit: '',   suffix: 'nearby' },
+  { key: 'road_density',        icon: '🛣️', label: 'Road Density',       max: 300,   unit: '',   suffix: 'roads' },
 ]
 
 /* ─── Category config for display order, icon & label ─── */
@@ -114,7 +116,7 @@ function LocalityScores({ scores }) {
     <section className="locality-scores">
       <h3 className="place-section-title">📊 Locality Scores — {scores.locality}</h3>
       <div className="locality-scores-grid">
-        {SCORE_CARDS.map(({ key, icon, label, max, unit, invert }) => {
+        {SCORE_CARDS.map(({ key, icon, label, max, unit, invert, suffix }) => {
           const raw = scores[key]
           if (raw == null) return null
           // For distance metrics, lower is better → invert the fill
@@ -125,6 +127,8 @@ function LocalityScores({ scores }) {
             ? (raw <= max * 0.25 ? '#22c55e' : raw <= max * 0.5 ? '#eab308' : '#ef4444')
             : (pct >= 60 ? '#22c55e' : pct >= 30 ? '#eab308' : '#ef4444')
 
+          const displayValue = typeof raw === 'number' ? raw.toFixed(2) : raw
+
           return (
             <div key={key} className="score-card">
               <div className="score-card-header">
@@ -132,7 +136,7 @@ function LocalityScores({ scores }) {
                 <span className="score-card-label">{label}</span>
               </div>
               <div className="score-card-value">
-                {typeof raw === 'number' ? raw.toFixed(2) : raw}{unit ? ` ${unit}` : ''}
+                {displayValue} <span className="score-card-max">{suffix}</span>
               </div>
               <div className="score-bar-track">
                 <div
@@ -148,9 +152,55 @@ function LocalityScores({ scores }) {
   )
 }
 
+/* ─── Radius options in metres ─── */
+const RADIUS_OPTIONS = [
+  { value: 1000,  label: '1 km' },
+  { value: 2000,  label: '2 km' },
+  { value: 3000,  label: '3 km' },
+  { value: 5000,  label: '5 km' },
+]
+
+/* ─── RadiusSlider ─── */
+function RadiusSlider({ value, onChange }) {
+  const idx = RADIUS_OPTIONS.findIndex(o => o.value === value)
+
+  return (
+    <div className="radius-slider-wrap">
+      <span className="radius-slider-label">📍 Search Radius</span>
+      <div className="radius-slider-row">
+        <input
+          type="range"
+          className="radius-slider"
+          min={0}
+          max={RADIUS_OPTIONS.length - 1}
+          step={1}
+          value={idx}
+          onChange={e => onChange(RADIUS_OPTIONS[+e.target.value].value)}
+        />
+        <span className="radius-slider-value">{RADIUS_OPTIONS[idx].label}</span>
+      </div>
+      <div className="radius-slider-ticks">
+        {RADIUS_OPTIONS.map(o => (
+          <span key={o.value} className="radius-tick">{o.label}</span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ─── Filter places by distance ─── */
+function filterByRadius(places, radiusM) {
+  if (!places) return []
+  return places.filter(p => {
+    if (p.distance_m == null) return true   // keep places without distance data
+    return p.distance_m <= radiusM
+  })
+}
+
 /* ─── DashboardPanel ─── */
 export default function DashboardPanel({ result, onClose }) {
   const { area, radius_meters: radiusMeters } = result
+  const [selectedRadius, setSelectedRadius] = useState(3000)
 
   return (
     <aside className="dashboard-panel" aria-label="Area analysis results">
@@ -172,12 +222,14 @@ export default function DashboardPanel({ result, onClose }) {
       <div className="dashboard-panel-body">
         <LocalityScores scores={result.locality_scores} />
 
+        <RadiusSlider value={selectedRadius} onChange={setSelectedRadius} />
+
         {SECTIONS.map(({ key, icon, title }) => (
           <PlaceSection
             key={key}
             icon={icon}
             title={title}
-            places={result[key]}
+            places={filterByRadius(result[key], selectedRadius)}
           />
         ))}
 
