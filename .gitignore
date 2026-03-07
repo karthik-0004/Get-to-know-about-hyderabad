@@ -191,3 +191,12 @@ sketch
 ml_model/*.pkl
 ml_model/*.pickle
 *.pkl
+
+# Environment variable files
+.env
+.env.*
+backend/.env
+frontend/find_place/.env
+
+# Scraped HTML snapshots (contain third-party API keys)
+find your place datasets/*_snapshot.html
