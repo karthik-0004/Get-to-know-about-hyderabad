@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import HyderabadMapPage from './pages/HyderabadMapPage'
-import RealEstateDashboard from './pages/RealEstateDashboard'
+import HyderabadLanding from './pages/HyderabadLanding'
 import StoryLanding from './pages/StoryLanding'
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
@@ -22,7 +22,7 @@ function App() {
             path="/dashboard"
             element={
               <ProtectedRoute>
-                <RealEstateDashboard />
+                <HyderabadLanding />
               </ProtectedRoute>
             }
           />

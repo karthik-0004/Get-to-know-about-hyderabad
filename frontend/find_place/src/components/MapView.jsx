@@ -120,7 +120,7 @@ export default function MapView({
       {/* ── Area search fallback rectangle ── */}
       {rectBounds && <Rectangle bounds={rectBounds} options={AREA_STYLE} />}
 
-      {/* ── Default location marker ── */}}
+      {/* ── Default location marker ── */}
       {markerPosition && (
         <Marker
           position={{ lat: markerPosition.lat, lng: markerPosition.lng }}
