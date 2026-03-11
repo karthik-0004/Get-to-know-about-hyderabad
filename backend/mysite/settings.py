@@ -172,12 +172,12 @@ CORS_ALLOW_HEADERS = [
 # ---------------------------------------------------------------------------
 CSRF_TRUSTED_ORIGINS = [
     "https://find-your-place-backend.onrender.com",
-    "https://get-to-know-about-hyderabad-lhssbk2qc.vercel.app",
+    "https://get-to-know-about-hyderabad.vercel.app",
 ]
 
 CORS_ALLOWED_ORIGINS = [
     "https://find-your-place-backend.onrender.com",
-    "https://get-to-know-about-hyderabad-lhssbk2qc.vercel.app",
+    "https://get-to-know-about-hyderabad.vercel.app",
 ]
 
 # Also allow Vercel preview deployments (URL hash changes on each deploy)
