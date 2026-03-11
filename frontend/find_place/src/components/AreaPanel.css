@@ -423,12 +423,93 @@
 @media (max-width: 768px) {
   .area-panel {
     width: 100%;
-    height: 55vh;
+    height: 52vh;
+    height: 52dvh;
     top: auto;
     bottom: 0;
     border-right: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 18px 18px 0 0;
     animation: panelSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .area-panel::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    margin: 0.5rem auto 0;
+    flex-shrink: 0;
+  }
+
+  .area-panel__header {
+    padding: 0.6rem 1rem 0.6rem;
+  }
+
+  .area-panel__locality {
+    font-size: 1rem;
+  }
+
+  .area-panel__body {
+    padding: 0.75rem 1rem 1.2rem;
+  }
+
+  .area-panel__stats-row {
+    gap: 0.4rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .area-panel__stat {
+    padding: 0.5rem 0.4rem;
+  }
+
+  .area-panel__stat-value {
+    font-size: 0.92rem;
+  }
+
+  .area-panel__stat-label {
+    font-size: 0.6rem;
+  }
+
+  .area-panel__section-title {
+    font-size: 0.68rem;
+  }
+
+  .area-panel__tags {
+    gap: 0.35rem;
+    margin-bottom: 1rem;
+  }
+
+  .area-panel__tag {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.7rem;
+  }
+
+  .area-panel__market-card {
+    padding: 0.5rem 0.7rem;
+  }
+
+  .area-panel__market-type {
+    font-size: 0.72rem;
+  }
+
+  .area-panel__market-price {
+    font-size: 0.82rem;
+  }
+
+  .area-panel__listing-card {
+    padding: 0.55rem 0.7rem;
+  }
+
+  .area-panel__actions {
+    padding: 0.6rem 1rem;
+  }
+
+  .area-panel__action-btn {
+    padding: 0.55rem 0.4rem;
+    font-size: 0.75rem;
   }
 
   @keyframes panelSlideUp {

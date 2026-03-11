@@ -831,7 +831,8 @@ gmp-place-autocomplete.search-input::part(input) {
   }
 
   .map-container {
-    height: 45vh;
+    height: 100vh;
+    height: 100dvh;
     flex: none;
   }
 
@@ -854,7 +855,14 @@ gmp-place-autocomplete.search-input::part(input) {
   }
 
   .floating-search {
-    width: min(400px, calc(100% - 1.5rem));
+    top: 0.75rem;
+    width: min(400px, calc(100% - 1.2rem));
+  }
+
+  .search-input {
+    padding: 0.65rem 2.2rem 0.65rem 0.85rem;
+    font-size: 0.88rem;
+    border-radius: 12px;
   }
 
   .intro-title {
@@ -867,12 +875,29 @@ gmp-place-autocomplete.search-input::part(input) {
 
   .action-buttons-bar {
     flex-direction: column;
-    width: min(320px, calc(100% - 2rem));
+    width: min(280px, calc(100% - 2rem));
+    bottom: 1rem;
   }
 
   .action-btn {
     width: 100%;
     text-align: center;
+    padding: 0.65rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .map-type-toggle {
+    top: 3.5rem;
+  }
+
+  .map-type-toggle__btn {
+    padding: 0.3rem 0.75rem;
+    font-size: 0.72rem;
+  }
+
+  .analysis-error {
+    bottom: 4rem;
+    font-size: 0.78rem;
   }
 }
 
@@ -2095,4 +2120,59 @@ gmp-place-autocomplete.search-input::part(input) {
 .map-back-btn:hover {
   background: rgba(201, 168, 76, 0.15);
   border-color: #c9a84c;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MOBILE — Auth card, back button, story landing
+   ══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .map-back-btn {
+    top: 0.6rem;
+    left: 0.6rem;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.75rem;
+    border-radius: 6px;
+  }
+
+  .story-auth-card {
+    max-width: calc(100% - 2rem);
+    padding: 1.8rem 1.4rem;
+    margin: 0 1rem;
+  }
+
+  .auth-title {
+    font-size: 1.3rem;
+  }
+
+  .auth-subtitle {
+    font-size: 0.8rem;
+    margin-bottom: 1.4rem;
+  }
+
+  .auth-field input {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.88rem;
+  }
+
+  .auth-submit {
+    padding: 0.7rem;
+    font-size: 0.88rem;
+  }
+
+  .story-big-title {
+    font-size: clamp(2rem, 9vw, 3.5rem);
+  }
+
+  .story-eyebrow {
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+  }
+
+  .story-press-hint {
+    font-size: 0.75rem;
+  }
+
+  .story-phase-dots {
+    bottom: 1.5rem;
+  }
 }

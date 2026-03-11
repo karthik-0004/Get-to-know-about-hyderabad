@@ -174,9 +174,34 @@
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .climate-card {
-    width: 220px;
+    width: 200px;
     top: auto;
-    bottom: 4.5rem;
-    right: 0.75rem;
+    bottom: 0.75rem;
+    right: 0.5rem;
+    border-radius: 12px;
+  }
+
+  .climate-card__weather {
+    padding: 0.7rem 0.8rem;
+  }
+
+  .climate-card__temp {
+    font-size: 1.6rem;
+  }
+
+  .climate-card__condition {
+    font-size: 0.72rem;
+  }
+
+  .climate-card__detail {
+    padding: 0.35rem 0.45rem;
+  }
+
+  .climate-card__detail-value {
+    font-size: 0.75rem;
+  }
+
+  .climate-card__detail-label {
+    font-size: 0.58rem;
   }
 }

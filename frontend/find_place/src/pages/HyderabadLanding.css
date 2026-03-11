@@ -367,8 +367,134 @@
 .hyd-landing::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 2px; }
 
 @media (max-width: 768px) {
-  .hyd-features { grid-template-columns: 1fr; padding: 40px 24px; }
-  .hyd-stats { grid-template-columns: repeat(2, 1fr); }
-  .hyd-nav { padding: 18px 24px; }
-  .hyd-hero-title { font-size: clamp(40px, 10vw, 72px); }
+  .hyd-landing {
+    cursor: auto;
+  }
+
+  .hyd-cursor-dot,
+  .hyd-cursor-ring {
+    display: none;
+  }
+
+  .hyd-nav {
+    padding: 14px 16px;
+  }
+
+  .hyd-nav-logo {
+    font-size: 13px;
+    letter-spacing: 0.15em;
+    gap: 6px;
+  }
+
+  .hyd-nav-logo svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .hyd-nav-right {
+    gap: 10px;
+  }
+
+  .hyd-nav-greeting {
+    display: none;
+  }
+
+  .hyd-btn-logout {
+    padding: 6px 14px;
+    font-size: 12px;
+  }
+
+  .hyd-hero {
+    padding: 100px 20px 60px;
+  }
+
+  .hyd-hero-eyebrow {
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    margin-bottom: 20px;
+  }
+
+  .hyd-hero-eyebrow::before,
+  .hyd-hero-eyebrow::after {
+    width: 24px;
+  }
+
+  .hyd-hero-title {
+    font-size: clamp(36px, 10vw, 64px);
+    margin-bottom: 18px;
+  }
+
+  .hyd-hero-sub {
+    font-size: 14px;
+    margin-bottom: 32px;
+    max-width: 320px;
+  }
+
+  .hyd-btn-explore {
+    padding: 14px 40px;
+    font-size: 16px;
+  }
+
+  .hyd-scroll-hint {
+    bottom: 24px;
+  }
+
+  .hyd-features {
+    grid-template-columns: 1fr;
+    padding: 40px 20px;
+    gap: 16px;
+  }
+
+  .hyd-card {
+    padding: 28px 24px;
+  }
+
+  .hyd-card-icon {
+    font-size: 32px;
+    margin-bottom: 14px;
+  }
+
+  .hyd-card h3 {
+    font-size: 20px;
+    margin-bottom: 10px;
+  }
+
+  .hyd-card p {
+    font-size: 13px;
+  }
+
+  .hyd-card-number {
+    font-size: 48px;
+    top: 14px;
+    right: 16px;
+  }
+
+  .hyd-stats {
+    grid-template-columns: 1fr 1fr;
+    margin-bottom: 60px;
+    padding: 0;
+  }
+
+  .hyd-stat {
+    padding: 24px 16px;
+  }
+
+  .hyd-stat-num {
+    font-size: 34px;
+  }
+
+  .hyd-stat-label {
+    font-size: 10px;
+  }
+
+  .hyd-footer {
+    padding: 28px 16px;
+    font-size: 12px;
+  }
+
+  .hyd-side-glow-left,
+  .hyd-side-glow-right,
+  .hyd-mouse-light {
+    display: none;
+  }
 }

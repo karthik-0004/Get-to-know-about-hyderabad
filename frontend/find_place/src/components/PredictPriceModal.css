@@ -410,6 +410,58 @@
 .pp-modal::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
 
 /* ── responsive ── */
+@media (max-width: 599px) {
+  .pp-modal {
+    padding: 1.4rem 1.2rem 1.8rem;
+    max-height: 92vh;
+    max-height: 92dvh;
+  }
+
+  .pp-heading {
+    font-size: 1.3rem;
+  }
+
+  .pp-subheading {
+    font-size: 0.78rem;
+  }
+
+  .pp-type-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .pp-type-card {
+    padding: 0.65rem 0.4rem;
+  }
+
+  .pp-type-icon {
+    font-size: 1.2rem;
+  }
+
+  .pp-type-label {
+    font-size: 0.75rem;
+  }
+
+  .pp-pill {
+    padding: 0.5rem 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .pp-input {
+    padding: 0.6rem 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  .pp-submit {
+    padding: 0.75rem;
+    font-size: 0.88rem;
+  }
+
+  .pp-result-price {
+    font-size: 1.6rem;
+  }
+}
+
 @media (min-width: 600px) {
   .pp-overlay {
     align-items: center;

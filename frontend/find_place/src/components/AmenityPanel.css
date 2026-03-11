@@ -222,24 +222,65 @@
 @media (max-width: 768px) {
   .amenity-panel {
     width: 100% !important;
-    height: 60vh;
+    height: 55vh;
+    height: 55dvh;
     top: auto;
     bottom: 0;
     border-left: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 18px 18px 0 0;
     animation: amenitySlideUp 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .amenity-panel::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    margin: 0.5rem auto 0;
+    flex-shrink: 0;
   }
 
   .amenity-panel__resize-handle {
     display: none;
   }
 
-  @keyframes amenitySlideUp {
-    from { transform: translateY(100%); }
-    to   { transform: translateY(0); }
+  .amenity-panel__header {
+    padding: 0.6rem 1rem;
+  }
+
+  .amenity-panel__title {
+    font-size: 0.9rem;
+  }
+
+  .amenity-panel__body {
+    padding: 0.6rem;
   }
 
   .amenity-panel__card-photo {
-    height: 110px;
+    height: 100px;
+  }
+
+  .amenity-panel__card-body {
+    padding: 0.55rem 0.7rem;
+  }
+
+  .amenity-panel__card-name {
+    font-size: 0.82rem;
+  }
+
+  .amenity-panel__card-address {
+    font-size: 0.68rem;
+  }
+
+  .amenity-panel__card-meta {
+    gap: 0.5rem;
+  }
+
+  @keyframes amenitySlideUp {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
   }
 }
