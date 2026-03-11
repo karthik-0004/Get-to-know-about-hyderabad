@@ -38,6 +38,8 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     "find-your-place-backend.onrender.com",
 ]
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
 
 # ---------------------------------------------------------------------------
 # Application definition
