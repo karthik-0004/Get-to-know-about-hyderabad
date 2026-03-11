@@ -34,9 +34,9 @@ SECRET_KEY = os.environ.get(
 DEBUG = os.environ.get("DEBUG", "False") == "True"
 
 ALLOWED_HOSTS = os.environ.get(
-    "ALLOWED_HOSTS", "localhost,127.0.0.1"
+    "ALLOWED_HOSTS",
+    "localhost,127.0.0.1,find-your-place-backend.onrender.com",
 ).split(",")
-
 
 # ---------------------------------------------------------------------------
 # Application definition
@@ -149,7 +149,7 @@ _cors_origins = os.environ.get(
     "http://localhost:5173,http://127.0.0.1:5173",
 ).split(",")
 
-CORS_ALLOWED_ORIGINS = _cors_origins
+
 
 CORS_ALLOW_METHODS = [
     "GET",
@@ -167,7 +167,13 @@ CORS_ALLOW_HEADERS = [
 # CSRF – trust the same origins allowed by CORS so cross-origin
 # POST requests from the SPA are not blocked by Django's origin check.
 # ---------------------------------------------------------------------------
-CSRF_TRUSTED_ORIGINS = _cors_origins
+CSRF_TRUSTED_ORIGINS = [
+    "https://find-your-place-backend.onrender.com"
+]
+
+CORS_ALLOWED_ORIGINS = [
+    "https://find-your-place-backend.onrender.com"
+]
 
 # ---------------------------------------------------------------------------
 # ML Model directory (project root / ml_model)
