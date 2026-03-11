@@ -77,7 +77,7 @@ export default function PredictPriceModal({ locality, onClose }) {
         bhk: hasBhk ? bhk : null,
         sqft: Number(sqft),
       }
-      const resp = await fetch('http://127.0.0.1:8000/api/predict/', {
+      const resp = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'}/api/predict/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -120,7 +120,7 @@ export default function PredictPriceModal({ locality, onClose }) {
         furnishing: rentFurnishing,
         property_type: rentPropertyType,
       }
-      const resp = await fetch('http://127.0.0.1:8000/api/predict/rent/', {
+      const resp = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'}/api/predict/rent/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

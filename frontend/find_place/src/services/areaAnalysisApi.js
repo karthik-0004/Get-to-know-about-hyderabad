@@ -1,5 +1,6 @@
-const ANALYZE_ENDPOINT = 'http://127.0.0.1:8000/api/analyze-area/'
-const USAGE_ENDPOINT = 'http://127.0.0.1:8000/api/usage-counter/'
+const BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
+const ANALYZE_ENDPOINT = `${BASE}/api/analyze-area/`
+// const USAGE_ENDPOINT = 'http://127.0.0.1:8000/api/usage-counter/'
 
 /**
  * Custom error class so the caller can distinguish a "daily limit reached"

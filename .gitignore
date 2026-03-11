@@ -10,6 +10,7 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 media
+daily_counter.json
 
 # If your build process includes running collectstatic, then you probably don't need or want to include staticfiles/
 # in your Git repository. Update and uncomment the following line accordingly.
@@ -136,6 +137,7 @@ celerybeat.pid
 .venv
 env/
 venv/
+envv/
 ENV/
 env.bak/
 venv.bak/
@@ -191,7 +193,9 @@ sketch
 # Large ML model files
 ml_model/*.pkl
 ml_model/*.pickle
-*.pkl
+
+# Keep backend prediction ML models (needed for Render deployment)
+!backend/prediction/ml_models/*.pkl
 
 # Environment variable files
 .env
