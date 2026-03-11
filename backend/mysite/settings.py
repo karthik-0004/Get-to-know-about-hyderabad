@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 import os
 from pathlib import Path
 
+import dj_database_url
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -22,19 +23,24 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
+# ---------------------------------------------------------------------------
+# Security
+# ---------------------------------------------------------------------------
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-hq-=4=il2n_mficrwo0piwwp&5f*zay12)m(kjtl%pvf6(-1!5"
+SECRET_KEY = os.environ.get(
+    "SECRET_KEY", "fallback-dev-key-change-this"
+)
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.environ.get(
+    "ALLOWED_HOSTS", "localhost,127.0.0.1"
+).split(",")
 
 
+# ---------------------------------------------------------------------------
 # Application definition
+# ---------------------------------------------------------------------------
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -44,11 +50,13 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "corsheaders",
+    "mysite",
     "prediction",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -78,19 +86,21 @@ TEMPLATES = [
 WSGI_APPLICATION = "mysite.wsgi.application"
 
 
+# ---------------------------------------------------------------------------
 # Database
-# https://docs.djangoproject.com/en/6.0/ref/settings/#databases
+# ---------------------------------------------------------------------------
+# Uses DATABASE_URL from .env if set, otherwise falls back to SQLite.
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+    "default": dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}"
+    )
 }
 
 
+# ---------------------------------------------------------------------------
 # Password validation
-# https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
+# ---------------------------------------------------------------------------
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -108,8 +118,9 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+# ---------------------------------------------------------------------------
 # Internationalization
-# https://docs.djangoproject.com/en/6.0/topics/i18n/
+# ---------------------------------------------------------------------------
 
 LANGUAGE_CODE = "en-us"
 
@@ -120,19 +131,25 @@ USE_I18N = True
 USE_TZ = True
 
 
+# ---------------------------------------------------------------------------
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/6.0/howto/static-files/
+# ---------------------------------------------------------------------------
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 
 # ---------------------------------------------------------------------------
 # CORS Configuration (django-cors-headers)
 # ---------------------------------------------------------------------------
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
+
+_cors_origins = os.environ.get(
+    "CORS_ALLOWED_ORIGINS",
+    "http://localhost:5173,http://127.0.0.1:5173",
+).split(",")
+
+CORS_ALLOWED_ORIGINS = _cors_origins
 
 CORS_ALLOW_METHODS = [
     "GET",
@@ -149,16 +166,16 @@ CORS_ALLOW_HEADERS = [
 # ---------------------------------------------------------------------------
 # CSRF – trust the same origins allowed by CORS so cross-origin
 # POST requests from the SPA are not blocked by Django's origin check.
-# This does NOT disable CSRF globally; it only adds these origins to
-# the trusted list alongside the default same-origin checks.
 # ---------------------------------------------------------------------------
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
+CSRF_TRUSTED_ORIGINS = _cors_origins
 
 # ---------------------------------------------------------------------------
 # ML Model directory (project root / ml_model)
 # BASE_DIR = backend/, so BASE_DIR.parent = project root
 # ---------------------------------------------------------------------------
 ML_MODEL_DIR = BASE_DIR.parent / "ml_model"
+
+# ---------------------------------------------------------------------------
+# Default primary key field type
+# ---------------------------------------------------------------------------
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

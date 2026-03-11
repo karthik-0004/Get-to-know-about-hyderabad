@@ -141,39 +141,7 @@ export default function HyderabadMapPage() {
     }
   }, [])
 
-  /* ── Map click → reverse geocode → auto-analyze ── */
-  const reverseGeocode = useCallback((lat, lng) => {
-    if (!window.google?.maps?.Geocoder) return
 
-    const geocoder = new window.google.maps.Geocoder()
-    geocoder.geocode({ location: { lat, lng } }, async (results, status) => {
-      const topResult = status === 'OK' ? results?.[0] : null
-      const address = topResult
-        ? topResult.formatted_address
-        : `Selected point (${lat.toFixed(5)}, ${lng.toFixed(5)})`
-      const loc = { lat, lng, address }
-      setSelectedLocation(loc)
-      setSearchValue(address)
-      const boundary = await fetchBoundaryByCoords(lat, lng)
-      if (boundary) {
-        setAreaBoundary(boundary)
-      } else {
-        const viewport = topResult?.geometry?.viewport || null
-        setAreaBoundary(viewport ? { paths: null, bounds: viewport } : null)
-      }
-      // Auto-trigger analysis
-      runAnalysis(loc)
-    })
-  }, [runAnalysis])
-
-  const handleMapClick = useCallback(
-    ({ lat, lng }) => {
-      setMapCenter({ lat, lng })
-      setAnalysisError('')
-      reverseGeocode(lat, lng)
-    },
-    [reverseGeocode],
-  )
 
   /* ── Search selection → auto-analyze ── */
   const handleSelectFromSearch = useCallback(async (location) => {
@@ -246,7 +214,6 @@ export default function HyderabadMapPage() {
           zoom={mapZoom}
           markerPosition={selectedLocation}
           areaBoundary={areaBoundary}
-          onMapClick={handleMapClick}
           onMapLoad={handleMapLoaded}
           mapTypeId={mapTypeId}
         />

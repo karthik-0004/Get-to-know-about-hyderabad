@@ -187,6 +187,7 @@ thumb
 sketch
 
 # End of https://www.toptal.com/developers/gitignore/api/react,django
+
 # Large ML model files
 ml_model/*.pkl
 ml_model/*.pickle
@@ -194,13 +195,21 @@ ml_model/*.pickle
 
 # Environment variable files
 .env
-.env.*
+*.env
 backend/.env
 frontend/find_place/.env
+
+# Django
+db.sqlite3
+staticfiles/
 
 # Scraped HTML snapshots (contain third-party API keys)
 find your place datasets/*_snapshot.html
 
-# API usage counter (auto-generated at runtime)
+# API usage counter (legacy JSON file, now in DB)
 api_usage_counter.json
 backend/api_usage_counter.json
+
+# Node build output
+dist/
+

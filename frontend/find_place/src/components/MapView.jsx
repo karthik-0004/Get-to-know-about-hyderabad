@@ -45,7 +45,7 @@ const INTRO_STYLE_BASE = {
 export default function MapView({
   center, zoom = 13, markerPosition, areaBoundary,
   introBoundary, introBoundaryVisible, introActive,
-  onMapClick, onMapLoad, mapTypeId = 'roadmap',
+  onMapLoad, mapTypeId = 'roadmap',
 }) {
   const mapRef = useRef(null)
   const prevBoundsRef = useRef(null)
@@ -76,15 +76,6 @@ export default function MapView({
     }
   }, [center.lat, center.lng, zoom, areaBoundary, introActive])
 
-  const handleClick = useCallback(
-    (event) => {
-      const lat = event.latLng.lat()
-      const lng = event.latLng.lng()
-      onMapClick({ lat, lng })
-    },
-    [onMapClick],
-  )
-
   // Fallback rectangle bounds
   const rectBounds = useMemo(() => {
     if (!areaBoundary || areaBoundary.paths) return null
@@ -113,7 +104,6 @@ export default function MapView({
       zoom={zoom}
       options={MAP_OPTIONS}
       onLoad={onLoad}
-      onClick={handleClick}
     >
       {/* ── Intro: Hyderabad city glow polygon ── */}
       {introBoundary?.paths?.map((path, i) => (
