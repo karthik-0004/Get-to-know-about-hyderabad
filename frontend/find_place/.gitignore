@@ -12,8 +12,8 @@ dist
 dist-ssr
 *.local
 
-# Environment variables
-.env
+# Environment variables (keep .env for deployment — VITE_ vars are public)
+# .env
 .env.local
 .env.*.local
 

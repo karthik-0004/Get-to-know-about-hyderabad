@@ -197,11 +197,12 @@ ml_model/*.pickle
 # Keep backend prediction ML models (needed for Render deployment)
 !backend/prediction/ml_models/*.pkl
 
-# Environment variable files
+# Environment variable files (backend only — frontend VITE_ vars are public)
 .env
-*.env
 backend/.env
-frontend/find_place/.env
+
+# Keep frontend .env (VITE_ vars are baked into JS bundle, not secret)
+!frontend/find_place/.env
 
 # Django
 db.sqlite3
