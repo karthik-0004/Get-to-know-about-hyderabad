@@ -8,7 +8,8 @@ import AreaPanel from '../components/AreaPanel'
 import ClimateCard from '../components/ClimateCard'
 import AmenityPanel from '../components/AmenityPanel'
 import PredictPriceModal from '../components/PredictPriceModal'
-import { analyzeArea } from '../services/areaAnalysisApi'
+import UsageBadge from '../components/UsageBadge'
+import { analyzeArea, fetchUsageCounter, DailyLimitError } from '../services/areaAnalysisApi'
 import {
   fetchBoundaryByName,
   fetchBoundaryByCoords,
@@ -49,6 +50,20 @@ export default function HyderabadMapPage() {
   const [showAreaPanel, setShowAreaPanel] = useState(false)
   const [showPredictModal, setShowPredictModal] = useState(false)
   const [activeTag, setActiveTag] = useState(null)
+
+  /* ── Usage counter state ── */
+  const [usageInfo, setUsageInfo] = useState(null) // { date, count, limit, limit_reached }
+  const [limitReached, setLimitReached] = useState(false)
+
+  // Fetch counter on mount
+  useEffect(() => {
+    fetchUsageCounter().then((data) => {
+      if (data) {
+        setUsageInfo(data)
+        setLimitReached(data.limit_reached)
+      }
+    })
+  }, [])
 
   useEffect(() => {
     const previousAuthFailureHandler = window.gm_authFailure
@@ -103,9 +118,24 @@ export default function HyderabadMapPage() {
       const response = await analyzeArea(location)
       analysisCacheRef.current.set(cacheKey, response)
       setAnalysisResult(response)
+      // Update usage counter from response
+      if (response.usage) {
+        setUsageInfo(response.usage)
+        setLimitReached(response.usage.limit_reached)
+      }
     } catch (error) {
-      setAnalysisResult(null)
-      setAnalysisError(error.message || 'Unable to analyze selected area right now.')
+      if (error instanceof DailyLimitError) {
+        // Limit reached — update state, keep panel open in degraded mode
+        if (error.usage) {
+          setUsageInfo(error.usage)
+        }
+        setLimitReached(true)
+        setAnalysisResult(null)
+        setAnalysisError('')
+      } else {
+        setAnalysisResult(null)
+        setAnalysisError(error.message || 'Unable to analyze selected area right now.')
+      }
     } finally {
       setIsAnalyzing(false)
     }
@@ -207,6 +237,9 @@ export default function HyderabadMapPage() {
       {/* Back to dashboard */}
       <button className="map-back-btn" onClick={handleBack}>← Dashboard</button>
 
+      {/* Usage counter badge */}
+      <UsageBadge usageInfo={usageInfo} />
+
       <section className="map-container">
         <MapView
           center={mapCenter}
@@ -239,18 +272,19 @@ export default function HyderabadMapPage() {
             onOpenPredict={() => setShowPredictModal(true)}
             onTagClick={handleTagClick}
             activeTag={activeTag}
+            limitReached={limitReached}
           />
         )}
 
         {/* ── RIGHT: CLIMATE CARD (no tag) or AMENITY PANEL (tag active) ── */}
-        {showAreaPanel && selectedLocation && analysisResult && !activeTag && (
+        {showAreaPanel && selectedLocation && analysisResult && !activeTag && !limitReached && (
           <ClimateCard
             lat={selectedLocation.lat}
             lng={selectedLocation.lng}
           />
         )}
 
-        {showAreaPanel && selectedLocation && analysisResult && activeTag && (
+        {showAreaPanel && selectedLocation && analysisResult && activeTag && !limitReached && (
           <AmenityPanel
             activeTag={activeTag}
             analysisResult={analysisResult}

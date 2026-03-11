@@ -18,7 +18,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
-from .api_views import analyze_area, market_pulse, nearby_listings, place_photo
+from .api_views import analyze_area, market_pulse, nearby_listings, place_photo, api_usage_counter
 from .auth_views import register_user, login_user, google_login
 
 urlpatterns = [
@@ -31,4 +31,5 @@ urlpatterns = [
     path("api/login/", login_user, name="login_user"),
     path("api/google-login/", google_login, name="google_login"),
     path("api/predict/", include("prediction.urls")),
+    path("api/usage-counter/", api_usage_counter, name="api_usage_counter"),
 ]

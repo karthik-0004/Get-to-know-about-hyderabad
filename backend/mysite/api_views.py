@@ -11,6 +11,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from dotenv import load_dotenv
 
+from . import usage_counter
+
 load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env"))
 
 from django.http import HttpResponse
@@ -58,6 +60,18 @@ def _to_float(value, field_name: str) -> float:
 def analyze_area(request):
     if request.method == "OPTIONS":
         return JsonResponse({}, status=200)
+
+    # ── Daily API usage limit check ────────────────────────────────────
+    if usage_counter.is_limit_reached():
+        counter_info = usage_counter.get_usage()
+        return JsonResponse(
+            {
+                "error": "daily_limit_reached",
+                "message": f"Daily API limit of {counter_info['limit']} reached. Try again tomorrow.",
+                "usage": counter_info,
+            },
+            status=429,
+        )
 
     try:
         payload = json.loads(request.body.decode("utf-8"))
@@ -132,12 +146,16 @@ def analyze_area(request):
             print(f"[analyze_area] Unexpected: {exc}")
             return JsonResponse({"error": str(exc)}, status=500)
 
+    # ── Increment counter after successful Places fetch ──────────────
+    counter_info = usage_counter.increment()
+
     return JsonResponse(
         {
             "area": address,
             "coordinates": {"lat": lat, "lng": lng},
             "radius_meters": SEARCH_RADIUS_METERS,
             "locality_scores": locality_scores,
+            "usage": counter_info,
             **places,   # hospitals, malls, cinemas, schools, etc.
         },
         status=200,
@@ -344,3 +362,12 @@ def nearby_listings(request):
                 break
 
     return JsonResponse({"locality": locality, "listings": diverse})
+
+
+# ══════════════════════════════════════════════════════════════════════════
+#  Daily API Usage Counter
+# ══════════════════════════════════════════════════════════════════════════
+@require_http_methods(["GET"])
+def api_usage_counter(request):
+    """Return the current daily API usage count and limit."""
+    return JsonResponse(usage_counter.get_usage())

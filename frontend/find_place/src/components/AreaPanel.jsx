@@ -62,6 +62,7 @@ export default function AreaPanel({
   onOpenPredict,
   onTagClick,
   activeTag,
+  limitReached = false,
 }) {
   const [marketData, setMarketData] = useState(null)
 
@@ -183,23 +184,35 @@ export default function AreaPanel({
               </div>
             </div>
 
-            {/* Interactive Tags */}
-            <h4 className="area-panel__section-title">Nearby Amenities</h4>
-            <div className="area-panel__tags">
-              {TAGS.map((tag) => (
-                <button
-                  key={tag.key}
-                  className={`area-panel__tag ${activeTag === tag.key ? 'area-panel__tag--active' : ''}`}
-                  onClick={() => onTagClick(activeTag === tag.key ? null : tag.key)}
-                >
-                  <span className="area-panel__tag-icon">{tag.icon}</span>
-                  {tag.label}
-                  {tag.key === 'hospitals' && hospitalCount > 0 && ` (${hospitalCount})`}
-                  {tag.key === 'schools' && schoolCount > 0 && ` (${schoolCount})`}
-                  {tag.key === 'malls' && mallCount > 0 && ` (${mallCount})`}
-                </button>
-              ))}
-            </div>
+            {/* Limit-reached banner */}
+            {limitReached && (
+              <div className="area-panel__limit-banner">
+                <span className="area-panel__limit-banner-icon">📊</span>
+                <span>Amenity data unavailable — daily limit reached. Map & price features still active.</span>
+              </div>
+            )}
+
+            {/* Interactive Tags — hidden when limit reached */}
+            {!limitReached && (
+              <>
+                <h4 className="area-panel__section-title">Nearby Amenities</h4>
+                <div className="area-panel__tags">
+                  {TAGS.map((tag) => (
+                    <button
+                      key={tag.key}
+                      className={`area-panel__tag ${activeTag === tag.key ? 'area-panel__tag--active' : ''}`}
+                      onClick={() => onTagClick(activeTag === tag.key ? null : tag.key)}
+                    >
+                      <span className="area-panel__tag-icon">{tag.icon}</span>
+                      {tag.label}
+                      {tag.key === 'hospitals' && hospitalCount > 0 && ` (${hospitalCount})`}
+                      {tag.key === 'schools' && schoolCount > 0 && ` (${schoolCount})`}
+                      {tag.key === 'malls' && mallCount > 0 && ` (${mallCount})`}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
 
             {/* Market Pulse */}
             <div className="area-panel__market">

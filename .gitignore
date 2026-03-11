@@ -200,3 +200,7 @@ frontend/find_place/.env
 
 # Scraped HTML snapshots (contain third-party API keys)
 find your place datasets/*_snapshot.html
+
+# API usage counter (auto-generated at runtime)
+api_usage_counter.json
+backend/api_usage_counter.json

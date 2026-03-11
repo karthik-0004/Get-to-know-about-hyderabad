@@ -1,4 +1,17 @@
 const ANALYZE_ENDPOINT = 'http://127.0.0.1:8000/api/analyze-area/'
+const USAGE_ENDPOINT = 'http://127.0.0.1:8000/api/usage-counter/'
+
+/**
+ * Custom error class so the caller can distinguish a "daily limit reached"
+ * response from other network / API errors.
+ */
+export class DailyLimitError extends Error {
+  constructor(message, usage) {
+    super(message)
+    this.name = 'DailyLimitError'
+    this.usage = usage // { date, count, limit, limit_reached }
+  }
+}
 
 export async function analyzeArea(location) {
   const lat = typeof location.lat === 'function' ? location.lat() : Number(location.lat)
@@ -41,10 +54,32 @@ export async function analyzeArea(location) {
     payload = null
   }
 
+  // ── Handle 429 (daily limit reached) specially ──
+  if (response.status === 429 && payload?.error === 'daily_limit_reached') {
+    throw new DailyLimitError(
+      payload.message || 'Daily API limit reached.',
+      payload.usage || null,
+    )
+  }
+
   if (!response.ok) {
     const message = payload?.error || 'Failed to analyze the selected area.'
     throw new Error(message)
   }
 
   return payload
+}
+
+/**
+ * Fetch the current daily API usage counter from the backend.
+ * Returns { date, count, limit, limit_reached }
+ */
+export async function fetchUsageCounter() {
+  try {
+    const resp = await fetch(USAGE_ENDPOINT)
+    if (!resp.ok) return null
+    return await resp.json()
+  } catch {
+    return null
+  }
 }
