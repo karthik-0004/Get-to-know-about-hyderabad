@@ -33,10 +33,11 @@ SECRET_KEY = os.environ.get(
 
 DEBUG = os.environ.get("DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = os.environ.get(
-    "ALLOWED_HOSTS",
-    "localhost,127.0.0.1,find-your-place-backend.onrender.com",
-).split(",")
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "find-your-place-backend.onrender.com",
+]
 
 # ---------------------------------------------------------------------------
 # Application definition
