@@ -40,11 +40,12 @@ const INTRO_STYLE_BASE = {
  *   center, zoom, markerPosition, areaBoundary, onMapClick, onMapLoad
  *   introBoundary         — Hyderabad city polygon during intro
  *   introBoundaryVisible  — whether intro polygon is faded in
+ *   mapTypeId             — 'roadmap' | 'satellite'
  */
 export default function MapView({
   center, zoom = 13, markerPosition, areaBoundary,
   introBoundary, introBoundaryVisible, introActive,
-  onMapClick, onMapLoad,
+  onMapClick, onMapLoad, mapTypeId = 'roadmap',
 }) {
   const mapRef = useRef(null)
   const prevBoundsRef = useRef(null)
@@ -53,6 +54,13 @@ export default function MapView({
     mapRef.current = map
     if (onMapLoad) onMapLoad(map)
   }, [onMapLoad])
+
+  // Sync map type when prop changes
+  useEffect(() => {
+    if (mapRef.current && mapTypeId) {
+      mapRef.current.setMapTypeId(mapTypeId)
+    }
+  }, [mapTypeId])
 
   // Fit map to area boundary bounds (skip during intro to avoid conflicts)
   useEffect(() => {

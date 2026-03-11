@@ -8,17 +8,31 @@ export async function analyzeArea(location) {
     throw new Error('Invalid coordinates. Please select a location on the map first.')
   }
 
-  const response = await fetch(ANALYZE_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      lat,
-      lng,
-      address: location.address || '',
-    }),
-  })
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 45000)
+
+  let response
+  try {
+    response = await fetch(ANALYZE_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        lat,
+        lng,
+        address: location.address || '',
+      }),
+      signal: controller.signal,
+    })
+  } catch (err) {
+    clearTimeout(timeoutId)
+    if (err.name === 'AbortError') {
+      throw new Error('Analysis timed out. Please try again.')
+    }
+    throw new Error('Network error. Please check your connection.')
+  }
+  clearTimeout(timeoutId)
 
   let payload = null
   try {

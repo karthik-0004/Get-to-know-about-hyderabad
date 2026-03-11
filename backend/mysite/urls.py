@@ -18,12 +18,15 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
-from .api_views import analyze_area
+from .api_views import analyze_area, market_pulse, nearby_listings, place_photo
 from .auth_views import register_user, login_user, google_login
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/analyze-area/", analyze_area, name="analyze_area"),
+    path("api/market-pulse/", market_pulse, name="market_pulse"),
+    path("api/nearby-listings/", nearby_listings, name="nearby_listings"),
+    path("api/place-photo/", place_photo, name="place_photo"),
     path("api/register/", register_user, name="register_user"),
     path("api/login/", login_user, name="login_user"),
     path("api/google-login/", google_login, name="google_login"),

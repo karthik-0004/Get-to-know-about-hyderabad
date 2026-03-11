@@ -4,10 +4,10 @@ import { useJsApiLoader } from '@react-google-maps/api'
 
 import SearchBar from '../components/LocationSearch'
 import MapView from '../components/MapView'
-import DashboardPanel from '../components/DashboardPanel'
-import SellersPanel from '../components/SellersPanel'
+import AreaPanel from '../components/AreaPanel'
+import ClimateCard from '../components/ClimateCard'
+import AmenityPanel from '../components/AmenityPanel'
 import PredictPriceModal from '../components/PredictPriceModal'
-import useResizable from '../hooks/useResizable'
 import { analyzeArea } from '../services/areaAnalysisApi'
 import {
   fetchBoundaryByName,
@@ -34,30 +34,21 @@ export default function HyderabadMapPage() {
   const [selectedLocation, setSelectedLocation] = useState(null)
   const [searchValue, setSearchValue] = useState('')
   const [areaBoundary, setAreaBoundary] = useState(null)
+  const [mapTypeId, setMapTypeId] = useState('roadmap')
 
   const mapRef = useRef(null)
 
   /* ── Analysis state ── */
   const [analysisResult, setAnalysisResult] = useState(null)
-  const [showAnalysis, setShowAnalysis] = useState(false)
-  const [analysisError, setAnalysisError] = useState('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [analysisError, setAnalysisError] = useState('')
   const [mapRuntimeError, setMapRuntimeError] = useState('')
-  const analysisCacheRef = useRef(new Map()) // key: "lat,lng" → result
+  const analysisCacheRef = useRef(new Map())
 
-  /* ── Sellers panel state ── */
-  const [showSellers, setShowSellers] = useState(false)
-
-  /* ── Predict price modal state ── */
+  /* ── Panel states ── */
+  const [showAreaPanel, setShowAreaPanel] = useState(false)
   const [showPredictModal, setShowPredictModal] = useState(false)
-
-  /* ── Resizable panel ── */
-  const { width: panelWidth, handleMouseDown } = useResizable({
-    defaultWidth: 420,
-    minWidth: 350,
-    maxWidth: 700,
-  })
-  const panelOpen = !!analysisResult && showAnalysis
+  const [activeTag, setActiveTag] = useState(null)
 
   useEffect(() => {
     const previousAuthFailureHandler = window.gm_authFailure
@@ -82,7 +73,6 @@ export default function HyderabadMapPage() {
     }
   }, [])
 
-  /* ── Simple map load — start directly at Hyderabad ── */
   const handleMapLoaded = useCallback((map) => {
     mapRef.current = map
     map.setCenter(HYDERABAD_CENTER)
@@ -90,14 +80,40 @@ export default function HyderabadMapPage() {
     map.setMapTypeId('roadmap')
   }, [])
 
-  /* ── Back to dashboard ──*/
   const handleBack = () => navigate('/dashboard')
 
-  /* ── Map click ── */
-  const reverseGeocode = useCallback((lat, lng) => {
-    if (!window.google?.maps?.Geocoder) {
+  /* ── Auto-analyze helper ── */
+  const runAnalysis = useCallback(async (location) => {
+    if (!location) return
+
+    const cacheKey = `${Number(location.lat).toFixed(5)},${Number(location.lng).toFixed(5)}`
+    const cached = analysisCacheRef.current.get(cacheKey)
+    if (cached) {
+      setAnalysisResult(cached)
+      setShowAreaPanel(true)
+      setActiveTag(null)
       return
     }
+
+    setIsAnalyzing(true)
+    setShowAreaPanel(true)
+    setActiveTag(null)
+    setAnalysisError('')
+    try {
+      const response = await analyzeArea(location)
+      analysisCacheRef.current.set(cacheKey, response)
+      setAnalysisResult(response)
+    } catch (error) {
+      setAnalysisResult(null)
+      setAnalysisError(error.message || 'Unable to analyze selected area right now.')
+    } finally {
+      setIsAnalyzing(false)
+    }
+  }, [])
+
+  /* ── Map click → reverse geocode → auto-analyze ── */
+  const reverseGeocode = useCallback((lat, lng) => {
+    if (!window.google?.maps?.Geocoder) return
 
     const geocoder = new window.google.maps.Geocoder()
     geocoder.geocode({ location: { lat, lng } }, async (results, status) => {
@@ -105,7 +121,8 @@ export default function HyderabadMapPage() {
       const address = topResult
         ? topResult.formatted_address
         : `Selected point (${lat.toFixed(5)}, ${lng.toFixed(5)})`
-      setSelectedLocation({ lat, lng, address })
+      const loc = { lat, lng, address }
+      setSelectedLocation(loc)
       setSearchValue(address)
       const boundary = await fetchBoundaryByCoords(lat, lng)
       if (boundary) {
@@ -114,8 +131,10 @@ export default function HyderabadMapPage() {
         const viewport = topResult?.geometry?.viewport || null
         setAreaBoundary(viewport ? { paths: null, bounds: viewport } : null)
       }
+      // Auto-trigger analysis
+      runAnalysis(loc)
     })
-  }, [])
+  }, [runAnalysis])
 
   const handleMapClick = useCallback(
     ({ lat, lng }) => {
@@ -126,7 +145,7 @@ export default function HyderabadMapPage() {
     [reverseGeocode],
   )
 
-  /* ── Search selection ── */
+  /* ── Search selection → auto-analyze ── */
   const handleSelectFromSearch = useCallback(async (location) => {
     setMapCenter({ lat: location.lat, lng: location.lng })
     setSelectedLocation(location)
@@ -143,53 +162,22 @@ export default function HyderabadMapPage() {
       setAreaBoundary(null)
       setMapZoom(16)
     }
-  }, [])
+    // Auto-trigger analysis
+    runAnalysis(location)
+  }, [runAnalysis])
 
-  /* ── Analyze flow (with cache) ── */
-  const handleAnalyze = async (overrideLocation = null) => {
-    const locationToUse = overrideLocation
-      ? { lat: overrideLocation.lat, lng: overrideLocation.lng, address: overrideLocation.name || overrideLocation.address }
-      : selectedLocation
-    if (!locationToUse) return
-
-    const cacheKey = `${Number(locationToUse.lat).toFixed(5)},${Number(locationToUse.lng).toFixed(5)}`
-    const cached = analysisCacheRef.current.get(cacheKey)
-    if (cached) {
-      setAnalysisResult(cached)
-      setShowAnalysis(true)
-      setShowSellers(false)
-      return
-    }
-
-    setIsAnalyzing(true)
-    setAnalysisError('')
-    try {
-      const response = await analyzeArea(locationToUse)
-      analysisCacheRef.current.set(cacheKey, response)
-      setAnalysisResult(response)
-      setShowAnalysis(true)
-    } catch (error) {
-      setAnalysisResult(null)
-      setShowAnalysis(false)
-      setAnalysisError(error.message || 'Unable to analyze selected area right now.')
-    } finally {
-      setIsAnalyzing(false)
-    }
-  }
-
-  const handleClosePanel = () => {
-    setShowAnalysis(false)
+  /* ── Panel controls ── */
+  const handleCloseAreaPanel = () => {
+    setShowAreaPanel(false)
+    setActiveTag(null)
     setAnalysisError('')
   }
 
-  /* ── Sellers flow ── */
-  const handleOpenSellers = () => {
-    setShowSellers(true)
-  }
+  const handleTagClick = (tag) => setActiveTag(tag)
+  const handleClearTag = () => setActiveTag(null)
 
-  const handleCloseSellers = () => {
-    setShowSellers(false)
-  }
+  /* ── Extract locality name ── */
+  const localityName = selectedLocation?.address?.split(',')[0]?.trim() || ''
 
   /* ── Loading / error ── */
   if (loadError || mapRuntimeError || !mapsApiKey) {
@@ -216,7 +204,7 @@ export default function HyderabadMapPage() {
 
   return (
     <main className="map-page">
-      {/* Back to dashboard button */}
+      {/* Back to dashboard */}
       <button className="map-back-btn" onClick={handleBack}>← Dashboard</button>
 
       <section className="map-container">
@@ -227,6 +215,7 @@ export default function HyderabadMapPage() {
           areaBoundary={areaBoundary}
           onMapClick={handleMapClick}
           onMapLoad={handleMapLoaded}
+          mapTypeId={mapTypeId}
         />
 
         {/* Floating search */}
@@ -240,69 +229,43 @@ export default function HyderabadMapPage() {
 
         {analysisError && <div className="analysis-error">{analysisError}</div>}
 
-        {/* ── ACTION BUTTONS — appear after selecting a locality ── */}
-        {selectedLocation && (
-          <div className="action-buttons-bar">
-            <button
-              type="button"
-              className="action-btn action-btn--sellers"
-              onClick={handleOpenSellers}
-            >
-              Identify Sellers 🏷️
-            </button>
-            <button
-              type="button"
-              className="action-btn action-btn--predict"
-              onClick={() => setShowPredictModal(true)}
-            >
-              Predict Price 💰
-            </button>
-            <button
-              type="button"
-              className="action-btn action-btn--analyze"
-              onClick={() => handleAnalyze()}
-              disabled={isAnalyzing}
-            >
-              {isAnalyzing ? (
-                <span className="analyze-loading">
-                  <span className="loading-dot" aria-hidden="true" />
-                  Analyzing…
-                </span>
-              ) : (
-                'Analyse Area 📍'
-              )}
-            </button>
-          </div>
-        )}
-      </section>
-
-      {/* ── SELLERS PANEL (LEFT) ── */}
-      <div className={`sellers-shell ${showSellers ? 'open' : ''}`}>
-        {showSellers && (
-          <SellersPanel
-            locality={selectedLocation?.address?.split(',')[0]?.trim() || ''}
-            onClose={handleCloseSellers}
+        {/* ── LEFT AREA PANEL — appears after locality selection ── */}
+        {showAreaPanel && selectedLocation && (
+          <AreaPanel
+            locality={localityName}
+            analysisResult={analysisResult}
+            isLoading={isAnalyzing}
+            onClose={handleCloseAreaPanel}
+            onOpenPredict={() => setShowPredictModal(true)}
+            onTagClick={handleTagClick}
+            activeTag={activeTag}
           />
         )}
-      </div>
 
-      {/* ── ANALYSIS PANEL (RIGHT) ── */}
-      <div
-        className={`dashboard-shell ${panelOpen ? 'open' : ''}`}
-        style={panelOpen ? { width: panelWidth } : undefined}
-      >
-        <div className="resize-handle" onMouseDown={handleMouseDown} />
-        {analysisResult && showAnalysis && <DashboardPanel result={analysisResult} onClose={handleClosePanel} />}
-      </div>
+        {/* ── RIGHT: CLIMATE CARD (no tag) or AMENITY PANEL (tag active) ── */}
+        {showAreaPanel && selectedLocation && analysisResult && !activeTag && (
+          <ClimateCard
+            lat={selectedLocation.lat}
+            lng={selectedLocation.lng}
+          />
+        )}
+
+        {showAreaPanel && selectedLocation && analysisResult && activeTag && (
+          <AmenityPanel
+            activeTag={activeTag}
+            analysisResult={analysisResult}
+            onClose={handleClearTag}
+          />
+        )}
+      </section>
 
       {/* ── PREDICT PRICE MODAL ── */}
       {showPredictModal && (
         <PredictPriceModal
-          locality={selectedLocation?.address?.split(',')[0]?.trim() || ''}
+          locality={localityName}
           onClose={() => setShowPredictModal(false)}
         />
       )}
-
     </main>
   )
 }

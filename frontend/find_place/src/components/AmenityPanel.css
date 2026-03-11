@@ -1,0 +1,245 @@
+/* ══════════════════════════════════════════════════════════════
+   AMENITY PANEL — Big right-side slide-in for tag results
+   ══════════════════════════════════════════════════════════════ */
+.amenity-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  background: rgba(12, 15, 28, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-left: 1px solid rgba(255, 255, 255, 0.06);
+  z-index: 22;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: amenitySlideIn 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Resize handle on left edge ── */
+.amenity-panel__resize-handle {
+  position: absolute;
+  top: 0;
+  left: -4px;
+  width: 8px;
+  height: 100%;
+  cursor: ew-resize;
+  z-index: 30;
+  background: transparent;
+  transition: background 0.15s;
+}
+
+.amenity-panel__resize-handle:hover,
+.amenity-panel__resize-handle:active {
+  background: rgba(99, 102, 241, 0.4);
+}
+
+@keyframes amenitySlideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+
+/* ── Header ── */
+.amenity-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.amenity-panel__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.amenity-panel__title-icon {
+  font-size: 1.2rem;
+}
+
+.amenity-panel__count {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 500;
+  margin-left: 0.3rem;
+}
+
+.amenity-panel__close {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: background 120ms;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.amenity-panel__close:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+}
+
+/* ── Scrollable body ── */
+.amenity-panel__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.8rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+
+.amenity-panel__body::-webkit-scrollbar {
+  width: 5px;
+}
+
+.amenity-panel__body::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+}
+
+/* ── Place card ── */
+.amenity-panel__card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 0.7rem;
+  transition: border-color 0.2s;
+  cursor: pointer;
+  text-decoration: none;
+  display: block;
+  color: inherit;
+}
+
+.amenity-panel__card:hover {
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+/* Photo */
+.amenity-panel__card-photo {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  display: block;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.amenity-panel__card-photo-placeholder {
+  width: 100%;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.03);
+  color: #334155;
+  font-size: 2rem;
+}
+
+/* Card body */
+.amenity-panel__card-body {
+  padding: 0.7rem 0.85rem;
+}
+
+.amenity-panel__card-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin: 0 0 0.25rem;
+  line-height: 1.3;
+}
+
+.amenity-panel__card-address {
+  font-size: 0.72rem;
+  color: #64748b;
+  margin: 0 0 0.35rem;
+  line-height: 1.4;
+}
+
+.amenity-panel__card-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.amenity-panel__card-rating {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #fbbf24;
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.amenity-panel__card-distance {
+  font-size: 0.72rem;
+  color: #64748b;
+}
+
+.amenity-panel__card-link {
+  font-size: 0.72rem;
+  color: #818cf8;
+  margin-left: auto;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.amenity-panel__card-link:hover {
+  color: #a5b4fc;
+}
+
+/* ── Empty state ── */
+.amenity-panel__empty {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: #475569;
+}
+
+.amenity-panel__empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.amenity-panel__empty-text {
+  font-size: 0.85rem;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .amenity-panel {
+    width: 100% !important;
+    height: 60vh;
+    top: auto;
+    bottom: 0;
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    animation: amenitySlideUp 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .amenity-panel__resize-handle {
+    display: none;
+  }
+
+  @keyframes amenitySlideUp {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+
+  .amenity-panel__card-photo {
+    height: 110px;
+  }
+}

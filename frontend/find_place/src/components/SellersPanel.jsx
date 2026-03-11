@@ -3,27 +3,29 @@ const PLATFORMS = [
     name: 'Housing.com',
     logo: 'https://www.google.com/s2/favicons?domain=housing.com&sz=64',
     color: '#e8384f',
-    buildUrl: (locality) =>
-      `https://housing.com/in/buy/hyderabad/${locality.toLowerCase().replace(/\s+/g, '-')}`,
+    buildUrl: (locality) => {
+      const slug = locality.toLowerCase().replace(/\s+/g, '-')
+      return `https://housing.com/in/buy/hyderabad/${slug}`
+    },
     description: 'Premium listings with verified photos',
   },
   {
     name: '99acres',
     logo: 'https://www.google.com/s2/favicons?domain=99acres.com&sz=64',
     color: '#1a73e8',
-    buildUrl: (locality) =>
-      `https://www.99acres.com/search/property/buy/residential/all/hyderabad?keyword=${encodeURIComponent(locality)}&preference=S&area_unit=1&budget_min=null&budget_max=null`,
+    buildUrl: (locality) => {
+      const slug = locality.toLowerCase().replace(/\s+/g, '-')
+      return `https://www.99acres.com/property-in-${slug}-hyderabad-ffid?city=21&preference=S&area_unit=1&res_com=R`
+    },
     description: "India's largest property marketplace",
   },
   {
-    name: 'NoBroker',
-    logo: 'https://www.google.com/s2/favicons?domain=nobroker.in&sz=64',
-    color: '#ff5a5f',
-    buildUrl: (locality) => {
-      const name = locality.charAt(0).toUpperCase() + locality.slice(1)
-      return `https://www.nobroker.in/property/sale/hyderabad/${name}?searchParam=W3sibGF0IjoxNy4zODUsImxvbiI6NzguNDg2NywicGxhY2VOYW1lIjoiJHtuYW1lfSIsInNob3dNYXAiOmZhbHNlfV0=&radius=2.0&city=hyderabad&locality=${name}&isMetro=false`
-    },
-    description: 'Zero brokerage, direct from owners',
+    name: 'MagicBricks',
+    logo: 'https://www.google.com/s2/favicons?domain=magicbricks.com&sz=64',
+    color: '#e2473b',
+    buildUrl: (locality) =>
+      `https://www.magicbricks.com/property-for-sale/residential-real-estate?bedroom=2,3&proptype=Multistorey-Apartment,Builder-Floor-Apartment,Penthouse,Studio-Apartment,Residential-House,Villa&Locality=${encodeURIComponent(locality)}&cityName=Hyderabad`,
+    description: 'Trusted property search platform',
   },
 ]
 

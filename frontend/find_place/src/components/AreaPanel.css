@@ -1,0 +1,411 @@
+/* ══════════════════════════════════════════════════════════════
+   AREA PANEL — Glass-morphic left panel
+   ══════════════════════════════════════════════════════════════ */
+.area-panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 370px;
+  height: 100%;
+  background: rgba(12, 15, 28, 0.88);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: panelSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes panelSlideIn {
+  from { transform: translateX(-100%); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+
+/* ── Header ── */
+.area-panel__header {
+  padding: 1.1rem 1.25rem 0.8rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.area-panel__header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.area-panel__locality {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  line-height: 1.3;
+}
+
+.area-panel__sub {
+  margin: 0.2rem 0 0;
+  font-size: 0.78rem;
+  color: rgba(148, 163, 184, 0.8);
+  font-weight: 400;
+}
+
+.area-panel__close {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 0.95rem;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: background 120ms;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.area-panel__close:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+}
+
+/* ── Scrollable body ── */
+.area-panel__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 1.25rem 1.5rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.12) transparent;
+}
+
+.area-panel__body::-webkit-scrollbar {
+  width: 5px;
+}
+
+.area-panel__body::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.12);
+  border-radius: 3px;
+}
+
+/* ── Quick Stats Row ── */
+.area-panel__stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.6rem;
+  margin-bottom: 1.2rem;
+}
+
+.area-panel__stat {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 0.65rem 0.6rem;
+  text-align: center;
+}
+
+.area-panel__stat-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  display: block;
+}
+
+.area-panel__stat-label {
+  font-size: 0.68rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 0.15rem;
+  display: block;
+}
+
+/* ── Section titles ── */
+.area-panel__section-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 0.6rem;
+}
+
+/* ── Demand Index ── */
+.area-panel__demand {
+  margin-bottom: 1.3rem;
+}
+
+.area-panel__demand-bar-bg {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.35rem;
+}
+
+.area-panel__demand-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.area-panel__demand-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: #64748b;
+}
+
+.area-panel__demand-score {
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+/* ── Interactive Tags ── */
+.area-panel__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-bottom: 1.3rem;
+}
+
+.area-panel__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: #94a3b8;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.area-panel__tag:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #e2e8f0;
+}
+
+.area-panel__tag--active {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: rgba(99, 102, 241, 0.5);
+  color: #a5b4fc;
+}
+
+.area-panel__tag-icon {
+  font-size: 0.85rem;
+}
+
+/* ── Market Pulse ── */
+.area-panel__market {
+  margin-bottom: 1.3rem;
+}
+
+.area-panel__market-grid {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.area-panel__market-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 0.6rem 0.85rem;
+}
+
+.area-panel__market-type {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.area-panel__market-price {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #34d399;
+}
+
+.area-panel__market-range {
+  font-size: 0.65rem;
+  color: #64748b;
+  margin-top: 0.1rem;
+  text-align: right;
+}
+
+.area-panel__market-empty {
+  font-size: 0.8rem;
+  color: #475569;
+  font-style: italic;
+  padding: 0.4rem 0;
+}
+
+/* ── Nearby Listings ── */
+.area-panel__listings {
+  margin-bottom: 1rem;
+}
+
+.area-panel__listing-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 0.7rem 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.area-panel__listing-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.area-panel__listing-link:hover {
+  border-color: rgba(99, 102, 241, 0.4);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.area-panel__listing-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.area-panel__listing-type {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #818cf8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.area-panel__listing-price {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.area-panel__listing-arrow {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #818cf8;
+  transition: transform 0.2s;
+}
+
+.area-panel__listing-link:hover .area-panel__listing-arrow {
+  transform: translateX(3px);
+}
+
+.area-panel__listing-details {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.area-panel__listings-empty {
+  font-size: 0.8rem;
+  color: #475569;
+  font-style: italic;
+  padding: 0.4rem 0;
+}
+
+/* ── Action Buttons in Panel ── */
+.area-panel__actions {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.85rem 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.area-panel__action-btn {
+  flex: 1;
+  padding: 0.6rem 0.5rem;
+  border-radius: 10px;
+  border: none;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.area-panel__action-btn--sellers {
+  background: rgba(99, 102, 241, 0.15);
+  color: #a5b4fc;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.area-panel__action-btn--sellers:hover {
+  background: rgba(99, 102, 241, 0.25);
+}
+
+.area-panel__action-btn--predict {
+  background: rgba(52, 211, 153, 0.15);
+  color: #6ee7b7;
+  border: 1px solid rgba(52, 211, 153, 0.3);
+}
+
+.area-panel__action-btn--predict:hover {
+  background: rgba(52, 211, 153, 0.25);
+}
+
+/* ── Loading shimmer ── */
+.area-panel__loading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.area-panel__shimmer {
+  height: 14px;
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.04) 25%,
+    rgba(255,255,255,0.08) 50%,
+    rgba(255,255,255,0.04) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+.area-panel__shimmer--wide { width: 80%; }
+.area-panel__shimmer--med  { width: 60%; }
+.area-panel__shimmer--sm   { width: 40%; }
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .area-panel {
+    width: 100%;
+    height: 55vh;
+    top: auto;
+    bottom: 0;
+    border-right: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    animation: panelSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @keyframes panelSlideUp {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+}

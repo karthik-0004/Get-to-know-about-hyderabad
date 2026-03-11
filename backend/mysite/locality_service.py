@@ -1,14 +1,16 @@
 """
 Locality enrichment service — live scoring via Overpass API (OpenStreetMap).
 
-Uses ultra-lightweight bbox + ``out count`` queries so the public Overpass
-servers respond quickly.  Includes retry-with-backoff, mirror fallback, and
-an in-memory LRU cache to avoid repeat hits for the same area.
+Uses ultra-lightweight individual ``out count`` queries so the public
+Overpass servers respond quickly.  Includes mirror fallback and an
+in-memory LRU cache.  When Overpass is completely unavailable the service
+returns scores based on metro distance and IT-hub distance alone.
 """
 
 import logging
 import math
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache
 from typing import Any
 
@@ -21,10 +23,11 @@ OVERPASS_URLS = [
     "https://overpass-api.de/api/interpreter",
     "https://overpass.kumi.systems/api/interpreter",
     "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+    "https://overpass.openstreetmap.fr/api/interpreter",
 ]
 
-SEARCH_RADIUS_M = 3000      # metres for POI counts
-ROAD_RADIUS_M   = 1000      # metres for road density
+SEARCH_RADIUS_M = 1500      # metres for POI counts
+ROAD_RADIUS_M   = 500       # metres for road density
 
 # Hitech City coordinates (IT hub reference point)
 _IT_HUB_LAT = 17.4435
@@ -53,122 +56,91 @@ def _bbox(lat: float, lng: float, radius_m: int) -> str:
     return f"{lat - d_lat},{lng - d_lng},{lat + d_lat},{lng + d_lng}"
 
 
-def _overpass_query(query: str, timeout: int = 25) -> list[dict[str, Any]]:
-    """Run an Overpass query with mirror fallback + one retry per mirror."""
-    for url in OVERPASS_URLS:
-        for attempt in range(2):           # 0 = first try, 1 = retry
-            try:
-                resp = requests.post(
-                    url,
-                    data={"data": query},
-                    timeout=timeout,
-                    headers={"Accept": "application/json"},
-                )
-                if resp.status_code == 429:
-                    # rate-limited — wait and retry once, then next mirror
-                    if attempt == 0:
-                        time.sleep(2)
-                        continue
-                    break
-                resp.raise_for_status()
-                return resp.json().get("elements", [])
-            except requests.exceptions.Timeout:
-                logger.warning("Overpass timeout (%s, attempt %d)", url, attempt)
-                break                       # skip retry on timeout, try next mirror
-            except Exception as exc:
-                logger.warning("Overpass error (%s, attempt %d): %s", url, attempt, exc)
-                if attempt == 0:
-                    time.sleep(1)
-                    continue
-                break
-    return []
-
-
-def _count_query(bbox: str, tag_filter: str, ql_timeout: int = 10) -> int:
-    """Run a single bbox count query — lightest possible Overpass call.
-
-    *tag_filter* is raw Overpass QL, e.g. ``["amenity"="hospital"]``.
-    """
+def _single_count(bbox: str, tag_filter: str) -> int:
+    """Run one tiny count query across mirrors. Returns 0 on total failure."""
     query = (
-        f"[out:json][timeout:{ql_timeout}];"
-        f"node({bbox}){tag_filter};"
-        f"out count;"
+        f'[out:json][timeout:5];'
+        f'node({bbox}){tag_filter};'
+        f'out count;'
     )
-    for el in _overpass_query(query, timeout=ql_timeout + 5):
-        cnt = el.get("tags", {}).get("total")
-        if cnt is not None:
-            return int(cnt)
-    return 0
+    for url in OVERPASS_URLS:
+        try:
+            resp = requests.post(
+                url,
+                data={"data": query},
+                timeout=6,
+                headers={"Accept": "application/json"},
+            )
+            if resp.status_code in (429, 504, 503):
+                continue
+            resp.raise_for_status()
+            for el in resp.json().get("elements", []):
+                cnt = el.get("tags", {}).get("total")
+                if cnt is not None:
+                    return int(cnt)
+            return 0
+        except Exception:
+            continue
+    return -1   # sentinel: all mirrors failed
 
 
 # ---------------------------------------------------------------------------
-# POI counts — one combined query (all categories, bbox, out count)
+# POI counts — individual queries run in parallel threads
 # ---------------------------------------------------------------------------
+
+_POI_QUERIES = [
+    ("hospital_count", '["amenity"~"^(hospital|clinic)$"]',          "search"),
+    ("school_count",   '["amenity"~"^(school|college|university)$"]', "search"),
+    ("mall_count",     '["shop"~"^(mall|supermarket)$"]',            "search"),
+    ("park_count",     '["leisure"~"^(park|garden)$"]',              "search"),
+    ("road_density",   '["highway"~"^(primary|secondary|tertiary|residential)$"]', "road"),
+]
+
 
 def _fetch_poi_counts(lat: float, lng: float) -> dict[str, int]:
-    """All 4 POI categories + road count in a single Overpass request."""
-    bb = _bbox(lat, lng, SEARCH_RADIUS_M)
+    """Fire individual count queries in parallel — much lighter per request."""
+    bb_search = _bbox(lat, lng, SEARCH_RADIUS_M)
     bb_road = _bbox(lat, lng, ROAD_RADIUS_M)
 
-    # Single combined query — each group returns one 'count' element.
-    # We use `make` to label each count so we can tell them apart.
-    query = f"""
-[out:json][timeout:20];
-node({bb})["amenity"~"^(hospital|clinic)$"]->.hospitals;
-node({bb})["amenity"~"^(school|college|university)$"]->.schools;
-node({bb})["shop"~"^(mall|supermarket)$"]->.malls;
-node({bb})["leisure"~"^(park|garden)$"]->.parks;
-way({bb_road})["highway"~"^(motorway|trunk|primary|secondary|tertiary|residential)$"]->.roads;
-.hospitals out count;
-.schools out count;
-.malls out count;
-.parks out count;
-.roads out count;
-""".strip()
+    results = {}
+    all_failed = True
 
-    elements = _overpass_query(query, timeout=25)
+    with ThreadPoolExecutor(max_workers=5) as pool:
+        futures = {}
+        for key, tag, kind in _POI_QUERIES:
+            bb = bb_road if kind == "road" else bb_search
+            futures[pool.submit(_single_count, bb, tag)] = key
 
-    # The API returns 5 count elements in the order we requested.
-    counts = []
-    for el in elements:
-        total = el.get("tags", {}).get("total")
-        if total is not None:
-            counts.append(int(total))
+        try:
+            for future in as_completed(futures, timeout=28):
+                key = futures[future]
+                try:
+                    val = future.result()
+                    if val >= 0:
+                        all_failed = False
+                    results[key] = max(val, 0)
+                except Exception:
+                    results[key] = 0
+        except TimeoutError:
+            # Collect whatever finished so far, cancel the rest
+            for f, key in futures.items():
+                if f.done():
+                    try:
+                        val = f.result()
+                        if val >= 0:
+                            all_failed = False
+                        results[key] = max(val, 0)
+                    except Exception:
+                        results.setdefault(key, 0)
+                else:
+                    f.cancel()
 
-    h = counts[0] if len(counts) > 0 else 0
-    s = counts[1] if len(counts) > 1 else 0
-    m = counts[2] if len(counts) > 2 else 0
-    p = counts[3] if len(counts) > 3 else 0
-    r = counts[4] if len(counts) > 4 else 0
+    # Fill any missing keys
+    for key, _, _ in _POI_QUERIES:
+        results.setdefault(key, 0)
 
-    return {
-        "hospital_count": h,
-        "school_count": s,
-        "mall_count": m,
-        "park_count": p,
-        "road_density": float(r),
-    }
-
-
-def _fetch_poi_counts_fallback(lat: float, lng: float) -> dict[str, int]:
-    """Per-category fallback if the combined query fails."""
-    bb = _bbox(lat, lng, SEARCH_RADIUS_M)
-    bb_road = _bbox(lat, lng, ROAD_RADIUS_M)
-
-    h = _count_query(bb, '["amenity"~"^(hospital|clinic)$"]')
-    s = _count_query(bb, '["amenity"~"^(school|college|university)$"]')
-    m = _count_query(bb, '["shop"~"^(mall|supermarket)$"]')
-    p = _count_query(bb, '["leisure"~"^(park|garden)$"]')
-    r = _count_query(bb_road,
-                     '["highway"~"^(motorway|trunk|primary|secondary|tertiary|residential)$"]')
-
-    return {
-        "hospital_count": h,
-        "school_count": s,
-        "mall_count": m,
-        "park_count": p,
-        "road_density": float(r),
-    }
+    results["_overpass_available"] = not all_failed
+    return results
 
 
 # ---------------------------------------------------------------------------
@@ -228,12 +200,7 @@ def _connectivity_score(metro_km: float, road_count: float) -> float:
 @lru_cache(maxsize=256)
 def _cached_poi_counts(lat_r: float, lng_r: float) -> dict:
     """Cached wrapper: lat_r / lng_r are already rounded."""
-    data = _fetch_poi_counts(lat_r, lng_r)
-    # If combined query returned all zeros (likely failed), try fallback
-    if all(v == 0 for v in data.values()):
-        logger.info("Combined query empty — trying per-category fallback")
-        data = _fetch_poi_counts_fallback(lat_r, lng_r)
-    return data
+    return _fetch_poi_counts(lat_r, lng_r)
 
 
 # ---------------------------------------------------------------------------
@@ -242,7 +209,11 @@ def _cached_poi_counts(lat_r: float, lng_r: float) -> dict:
 
 def get_locality_scores(address: str, lat: float | None = None,
                         lng: float | None = None) -> dict | None:
-    """Return live locality scores for (lat, lng) using Overpass + hardcoded metro."""
+    """Return live locality scores for (lat, lng) using Overpass + hardcoded metro.
+
+    Always returns a result — even when Overpass is completely down, the
+    metro-distance and IT-hub-distance scores are computed locally.
+    """
     if lat is None or lng is None:
         return None
 
@@ -251,10 +222,11 @@ def get_locality_scores(address: str, lat: float | None = None,
         lat_r = round(lat, 3)
         lng_r = round(lng, 3)
 
-        # 1 Overpass request (cached)
+        # Overpass request (cached) — may return zeros if servers are down
         data = _cached_poi_counts(lat_r, lng_r)
+        overpass_ok = data.get("_overpass_available", False)
 
-        # Instant calculations (no API)
+        # Instant calculations (no external API)
         metro_km = _nearest_metro_distance_km(lat, lng)
         it_hub_km = round(_haversine_km(lat, lng, _IT_HUB_LAT, _IT_HUB_LNG), 4)
 
@@ -262,9 +234,13 @@ def get_locality_scores(address: str, lat: float | None = None,
             data["hospital_count"], data["school_count"],
             data["mall_count"], data["park_count"],
         )
-        connectivity = _connectivity_score(metro_km, data["road_density"])
+        connectivity = _connectivity_score(metro_km, data.get("road_density", 0))
 
         locality_name = address.strip().split(",")[0].strip() if address else "Selected Area"
+
+        method = "live_overpass" if overpass_ok else "local_estimate"
+        if not overpass_ok:
+            logger.warning("Overpass unavailable — returning local-only scores")
 
         return {
             "locality": locality_name,
@@ -276,9 +252,29 @@ def get_locality_scores(address: str, lat: float | None = None,
             "school_count": data["school_count"],
             "mall_count": data["mall_count"],
             "park_count": data["park_count"],
-            "road_density": data["road_density"],
-            "match_method": "live_overpass",
+            "road_density": data.get("road_density", 0),
+            "match_method": method,
         }
     except Exception as exc:
         logger.exception("Live locality scoring failed: %s", exc)
-        return None
+        # Last-resort fallback — return at least metro/IT-hub scores
+        try:
+            metro_km = _nearest_metro_distance_km(lat, lng)
+            it_hub_km = round(_haversine_km(lat, lng, _IT_HUB_LAT, _IT_HUB_LNG), 4)
+            locality_name = address.strip().split(",")[0].strip() if address else "Selected Area"
+            connectivity = _connectivity_score(metro_km, 0)
+            return {
+                "locality": locality_name,
+                "amenity_score": 0,
+                "connectivity_score": connectivity,
+                "metro_distance_km": metro_km,
+                "it_hub_distance_km": it_hub_km,
+                "hospital_count": 0,
+                "school_count": 0,
+                "mall_count": 0,
+                "park_count": 0,
+                "road_density": 0,
+                "match_method": "local_fallback",
+            }
+        except Exception:
+            return None

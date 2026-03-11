@@ -136,6 +136,33 @@ export default function SearchBar({ searchValue, onSearchValueChange, onSelectLo
   /* ── Keyboard navigation ── */
   const handleKeyDown = useCallback(
     (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        if (showDropdown && predictions.length > 0) {
+          // If an item is highlighted, select it; otherwise select the first
+          const idx = activeIndex >= 0 ? activeIndex : 0
+          handleSelect(predictions[idx])
+        } else if (searchValue && searchValue.length >= 2) {
+          // Dropdown not visible but user typed — force fetch predictions then select first
+          const svc = getAutocompleteService()
+          if (svc) {
+            svc.getPlacePredictions(
+              {
+                input: searchValue,
+                sessionToken: getSessionToken(),
+                componentRestrictions: { country: 'in' },
+              },
+              (results, status) => {
+                if (status === window.google.maps.places.PlacesServiceStatus.OK && results?.length) {
+                  handleSelect(results[0])
+                }
+              },
+            )
+          }
+        }
+        return
+      }
+
       if (!showDropdown || predictions.length === 0) return
 
       if (e.key === 'ArrowDown') {
@@ -144,17 +171,12 @@ export default function SearchBar({ searchValue, onSearchValueChange, onSelectLo
       } else if (e.key === 'ArrowUp') {
         e.preventDefault()
         setActiveIndex((prev) => (prev > 0 ? prev - 1 : predictions.length - 1))
-      } else if (e.key === 'Enter') {
-        e.preventDefault()
-        if (activeIndex >= 0 && activeIndex < predictions.length) {
-          handleSelect(predictions[activeIndex])
-        }
       } else if (e.key === 'Escape') {
         setShowDropdown(false)
         setActiveIndex(-1)
       }
     },
-    [showDropdown, predictions, activeIndex, handleSelect],
+    [showDropdown, predictions, activeIndex, handleSelect, searchValue, getAutocompleteService, getSessionToken],
   )
 
   return (

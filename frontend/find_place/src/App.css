@@ -233,6 +233,45 @@ gmp-place-autocomplete.search-input::part(input) {
 }
 
 /* ══════════════════════════════════════════════════════════════
+   MAP / SATELLITE TOGGLE
+   ══════════════════════════════════════════════════════════════ */
+.map-type-toggle {
+  position: absolute;
+  top: 4.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 900;
+  display: flex;
+  background: rgba(12, 15, 28, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.map-type-toggle__btn {
+  padding: 0.4rem 1rem;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.map-type-toggle__btn:hover {
+  color: #e2e8f0;
+}
+
+.map-type-toggle__btn--active {
+  background: rgba(99, 102, 241, 0.25);
+  color: #a5b4fc;
+}
+
+/* ══════════════════════════════════════════════════════════════
    CINEMATIC INTRO OVERLAY
    ══════════════════════════════════════════════════════════════ */
 .intro-overlay {

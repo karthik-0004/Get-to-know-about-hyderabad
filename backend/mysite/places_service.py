@@ -13,6 +13,7 @@ from __future__ import annotations
 import math
 import os
 import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
 import requests
@@ -25,6 +26,9 @@ PHOTO_URL_TEMPLATE = (
     "https://maps.googleapis.com/maps/api/place/photo"
     "?maxheight=400&photo_reference={ref}&key={key}"
 )
+
+# Backend proxy path – frontend hits this instead of Google directly
+_PROXY_PHOTO_PATH = "/api/place-photo/?ref={ref}"
 SEARCH_RADIUS_DEFAULT = 3000
 SEARCH_RADIUS_METERS = SEARCH_RADIUS_DEFAULT  # backward-compat alias
 MAX_RESULTS_PER_CATEGORY = 5
@@ -155,10 +159,20 @@ def _search_nearby(
 
 
 def _build_photo_url(photo_reference: str) -> str:
-    """Build a direct photo URL using the legacy Place Photos endpoint."""
+    """Return a backend-proxied photo URL (keeps API key server-side)."""
     if not photo_reference:
         return ""
-    return PHOTO_URL_TEMPLATE.format(ref=photo_reference, key=_get_api_key())
+    return _PROXY_PHOTO_PATH.format(ref=photo_reference)
+
+
+def fetch_photo_bytes(photo_reference: str) -> tuple[bytes, str]:
+    """Fetch a Place Photo from Google and return (image_bytes, content_type)."""
+    api_key = _get_api_key()
+    url = PHOTO_URL_TEMPLATE.format(ref=photo_reference, key=api_key)
+    resp = requests.get(url, timeout=10, allow_redirects=True)
+    resp.raise_for_status()
+    content_type = resp.headers.get("Content-Type", "image/jpeg")
+    return resp.content, content_type
 
 
 def _format_place(
@@ -330,32 +344,47 @@ _CATEGORY_CONFIG: list[dict[str, Any]] = [
 
 # ── Public entry point ─────────────────────────────────────────────────
 
+def _fetch_category(cfg: dict, lat: float, lng: float) -> tuple[str, list]:
+    """Fetch, filter, format one category. Returns (key, places_list)."""
+    raw = _search_nearby(
+        lat=lat,
+        lng=lng,
+        place_type=cfg["place_type"],
+        radius_meters=cfg.get("radius", SEARCH_RADIUS_DEFAULT),
+        keyword=cfg.get("keyword"),
+    )
+    cleaned = _filter_places(
+        raw,
+        min_rating=cfg.get("min_rating", 0.0),
+        exclude_words=cfg.get("exclude"),
+    )
+    formatted = [_format_place(p, origin_lat=lat, origin_lng=lng) for p in cleaned]
+    return cfg["key"], _sorted_by_distance(formatted)
+
+
+def _fetch_trains(lat: float, lng: float) -> tuple[str, Any]:
+    raw = _search_nearby(lat=lat, lng=lng, place_type="train_station")
+    formatted = [_format_place(p, origin_lat=lat, origin_lng=lng) for p in raw]
+    sorted_trains = _sorted_by_distance(formatted)
+    return "nearest_railway_station", sorted_trains[0] if sorted_trains else None
+
+
 def analyze_area(lat: float, lng: float) -> dict[str, Any]:
     result: dict[str, Any] = {}
 
-    # ── Top-5-by-rating categories (with quality filters) ───────
-    for cfg in _CATEGORY_CONFIG:
-        raw = _search_nearby(
-            lat=lat,
-            lng=lng,
-            place_type=cfg["place_type"],
-            radius_meters=cfg.get("radius", SEARCH_RADIUS_DEFAULT),
-            keyword=cfg.get("keyword"),
-        )
-        cleaned = _filter_places(
-            raw,
-            min_rating=cfg.get("min_rating", 0.0),
-            exclude_words=cfg.get("exclude"),
-        )
-        formatted = [_format_place(p, origin_lat=lat, origin_lng=lng) for p in cleaned]
-        result[cfg["key"]] = _sorted_by_rating(formatted)
+    # Run all Google Places calls in parallel (9 categories + 1 train)
+    with ThreadPoolExecutor(max_workers=10) as pool:
+        futures = [
+            pool.submit(_fetch_category, cfg, lat, lng)
+            for cfg in _CATEGORY_CONFIG
+        ]
+        futures.append(pool.submit(_fetch_trains, lat, lng))
 
-    # ── Nearest railway station (single object, sorted by distance) ──
-    raw_trains = _search_nearby(lat=lat, lng=lng, place_type="train_station")
-    formatted_trains = [
-        _format_place(p, origin_lat=lat, origin_lng=lng) for p in raw_trains
-    ]
-    sorted_trains = _sorted_by_distance(formatted_trains)
-    result["nearest_railway_station"] = sorted_trains[0] if sorted_trains else None
+        for fut in as_completed(futures):
+            try:
+                key, data = fut.result()
+                result[key] = data
+            except Exception as exc:
+                print(f"[Places parallel] category failed: {exc}")
 
     return result
