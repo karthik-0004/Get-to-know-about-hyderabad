@@ -68,6 +68,10 @@ export default function SearchBar({ searchValue, onSearchValueChange, onSelectLo
         input: searchValue,
         sessionToken: token,
         componentRestrictions: { country: 'in' },
+        locationRestriction: new window.google.maps.LatLngBounds(
+          new window.google.maps.LatLng(17.15, 78.10), // SW Hyderabad
+          new window.google.maps.LatLng(17.65, 78.85)  // NE Hyderabad
+        ),
       },
       (results, status) => {
         if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
@@ -88,7 +92,7 @@ export default function SearchBar({ searchValue, onSearchValueChange, onSelectLo
       pSvc.getDetails(
         {
           placeId: prediction.place_id,
-          fields: ['geometry', 'formatted_address', 'name'],
+          fields: ['geometry', 'formatted_address', 'name', 'address_components'],
           sessionToken: getSessionToken(),
         },
         (place, status) => {
@@ -96,14 +100,28 @@ export default function SearchBar({ searchValue, onSearchValueChange, onSelectLo
 
           const lat = place.geometry.location.lat()
           const lng = place.geometry.location.lng()
-          const address = place.formatted_address || place.name || prediction.description
+          
+          let areaName = place.name;
+          if (place.address_components) {
+            const typesObj = {};
+            place.address_components.forEach((c) => {
+              c.types.forEach((t) => { typesObj[t] = c.long_name; });
+            });
+            // Prioritize neighborhood, sublocalities over a full address
+            areaName = typesObj['neighborhood'] || 
+                       typesObj['sublocality_level_1'] || 
+                       typesObj['sublocality_level_2'] || 
+                       typesObj['sublocality'] || 
+                       typesObj['locality'] || 
+                       place.name || 
+                       prediction.description;
+          }
 
           // Extract viewport bounds (fallback) + name for Nominatim boundary lookup
           const viewport = place.geometry.viewport || null
-          const name = place.name || prediction.description
 
-          onSearchValueChange(address)
-          onSelectLocation({ lat, lng, address, viewport, name })
+          onSearchValueChange(areaName)
+          onSelectLocation({ lat, lng, address: areaName, viewport, name: areaName })
           setPredictions([])
           setShowDropdown(false)
           resetSessionToken()
@@ -151,6 +169,10 @@ export default function SearchBar({ searchValue, onSearchValueChange, onSelectLo
                 input: searchValue,
                 sessionToken: getSessionToken(),
                 componentRestrictions: { country: 'in' },
+                locationRestriction: new window.google.maps.LatLngBounds(
+                  new window.google.maps.LatLng(17.15, 78.10),
+                  new window.google.maps.LatLng(17.65, 78.85)
+                ),
               },
               (results, status) => {
                 if (status === window.google.maps.places.PlacesServiceStatus.OK && results?.length) {
