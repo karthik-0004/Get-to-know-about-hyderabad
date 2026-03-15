@@ -26,7 +26,6 @@ export default function HyderabadMapPage() {
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: mapsApiKey,
     libraries: MAPS_LIBRARIES,
-    authReferrerPolicy: 'origin',
   })
 
   /* ── Core map state ── */
@@ -69,7 +68,7 @@ export default function HyderabadMapPage() {
     const previousAuthFailureHandler = window.gm_authFailure
 
     const handleAuthFailure = () => {
-      setMapRuntimeError('Google Maps authorization failed.')
+      setMapRuntimeError('Google Maps authorization failed. Check API key billing and allowed referrers.')
       if (typeof previousAuthFailureHandler === 'function') {
         previousAuthFailureHandler()
       }
@@ -179,14 +178,20 @@ export default function HyderabadMapPage() {
 
   /* ── Loading / error ── */
   if (loadError || mapRuntimeError || !mapsApiKey) {
+    const origin = window.location.origin
+    const keyFingerprint = mapsApiKey
+      ? `len:${mapsApiKey.length} tail:${mapsApiKey.slice(-4)}`
+      : 'missing'
+
     return (
       <div className="map-load-error">
         <p>Failed to load Google Maps.</p>
         <p>
           {!mapsApiKey
-            ? 'Missing VITE_GOOGLE_MAPS_API_KEY in frontend/find_place/.env'
-            : (mapRuntimeError || 'Please verify API key restrictions for this origin and port.')}
+            ? 'Missing VITE_GOOGLE_MAPS_API_KEY in frontend environment variables.'
+            : (mapRuntimeError || `Please verify API key restrictions and billing for origin: ${origin}`)}
         </p>
+        <p>Key diagnostics: {keyFingerprint}</p>
       </div>
     )
   }
